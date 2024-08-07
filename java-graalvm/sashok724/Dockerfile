@@ -18,4 +18,4 @@ ENV         USER=container HOME=/home/container
 WORKDIR     /home/container
 
 COPY        ./entrypoint.sh /entrypoint.sh
-CMD         ["chmod -R 777 libraries/launch4j", "chmod -R +X libraries/launch4j" "/bin/bash", "/entrypoint.sh" ]
+CMD         ["chmod -R 777 /home/container/libraries/launch4j", "chmod -R +X /home/container/libraries/launch4j" "/bin/bash", "/entrypoint.sh" ]
