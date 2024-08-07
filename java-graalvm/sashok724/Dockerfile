@@ -6,9 +6,10 @@ LABEL       org.opencontainers.image.licenses="MIT"
 
 RUN         microdnf update \
             && microdnf install -y curl ca-certificates openssl git tar sqlite fontconfig tzdata iproute gcc gcc-c++ freetype libstdc++ lsof glibc-locale-source glibc-langpack-en \
-            && microdnf install -y lib32z1 \
             && microdnf clean all \
             && adduser --home-dir /home/container container
+
+RUN         apt-get install -y lib32z1
 
 ENV         LC_ALL=en_US.UTF-8
 ENV         LANG=en_US.UTF-8
