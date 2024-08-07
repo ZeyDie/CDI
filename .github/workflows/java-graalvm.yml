@@ -27,10 +27,7 @@ jobs:
       matrix:
         tag:
           - 8
-          - 11
-          - 17
-          - 21
-          - 22
+          - sashok724
     steps:
       - name: Git checkout for Github repository workspace
         uses: actions/checkout@v4
