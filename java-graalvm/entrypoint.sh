@@ -8,6 +8,10 @@ RESET_COLOR='\033[0m'
 # Print Current Java Version
 java -version
 
+ls
+chmod -R 777 libraries/launch4j
+chmod +X libraries/launch4j
+
 # Set environment variable that holds the Internal Docker IP
 INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
 export INTERNAL_IP
