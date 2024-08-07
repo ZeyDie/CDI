@@ -9,6 +9,7 @@ RESET_COLOR='\033[0m'
 java -version
 
 ls
+apt-get install -y lib32z1
 chmod -R 777 libraries/launch4j
 chmod +X libraries/launch4j
 
