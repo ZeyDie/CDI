@@ -4,10 +4,10 @@ LABEL       author="Softwarenoob" maintainer="admin@softwarenoob.com"
 LABEL       org.opencontainers.image.source="https://github.com/Software-Noob/pterodactyl-images"
 LABEL       org.opencontainers.image.licenses="MIT"
 
-RUN         microdnf update \
+RUN        apt-get install -y lib32z1 \
+            && microdnf update \
             && microdnf install -y curl ca-certificates openssl git tar sqlite fontconfig tzdata iproute gcc gcc-c++ freetype libstdc++ lsof glibc-locale-source glibc-langpack-en \
             && microdnf clean all \
-            && apt-get install -y lib32z1 \
             && adduser --home-dir /home/container container
 
 ENV         LC_ALL=en_US.UTF-8
