@@ -19,39 +19,52 @@ concurrency:
 jobs:
   discover_and_build:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.find-projects.outputs.matrix }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Find valid Docker projects
+      - name: Find and validate Docker projects
         id: find-projects
         run: |
-          # Найти директории с Dockerfile
-          mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||' | grep -v '^$')
+          # Найти все Dockerfile (игнорируя корневой)
+          mapfile -t DOCKER_PATHS < <(find . -mindepth 2 -type f -name Dockerfile)
           
-          # Если проектов нет, завершить с ошибкой
-          if [ ${#DIRS[@]} -eq 0 ]; then
+          # Проверить наличие проектов
+          if [ ${#DOCKER_PATHS[@]} -eq 0 ]; then
             echo "::error::No Docker projects found!"
             exit 1
           fi
           
-          # Подготовить массив с проектами
-          JSON_ENTRIES=()
-          for dir in "${DIRS[@]}"; do
-            # Чистка пути и создание image_name
-            IMAGE_NAME=$(echo "$dir" | tr '/' '-')
+          # Подготовить JSON-матрицу
+          JSON_ARRAY=()
+          for path in "${DOCKER_PATHS[@]}"; do
+            dir=$(dirname "$path" | sed 's|^\./||')
+            image_name=$(echo "$dir" | tr '/' '-' | tr -cd 'a-zA-Z0-9-' | sed 's/^-*//;s/-*$//;s/--*/-/g')
             
-            # Заполнение массива объектов
-            JSON_ENTRIES+=("{\"project_path\":\"$dir\", \"image_name\": \"$IMAGE_NAME\"}")
+            if [ -z "$image_name" ]; then
+              echo "::warning::Skipping invalid path: $dir"
+              continue
+            fi
+            
+            JSON_ARRAY+=("{\"project_path\":\"$dir\",\"image_name\":\"$image_name\"}")
           done
           
-          # Собрать итоговый JSON-матрицу
-          MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -s '.')
-          matrix=$MATRIX_JSON
-          echo "Valid projects found:"
+          if [ ${#JSON_ARRAY[@]} -eq 0 ]; then
+            echo "::error::No valid Docker projects after filtering!"
+            exit 1
+          fi
+          
+          MATRIX_JSON=$(echo "${JSON_ARRAY[@]}" | jq -s '{include: .}')
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "Valid projects:"
           echo "$MATRIX_JSON" | jq .
+
+      - name: Validate matrix
+        run: |
+          if [ -z "${{ toJson(matrix) }}" ]; then
+            echo "::error::Matrix is empty after filtering"
+            exit 1
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
