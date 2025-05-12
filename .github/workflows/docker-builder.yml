@@ -25,9 +25,20 @@ jobs:
       - name: Find all Dockerfiles recursively
         id: find-dockerfiles
         run: |
+          # Ищем все Dockerfiles рекурсивно
           DOCKERFILES=$(find . -type f -name Dockerfile)
           FOLDERS=$(dirname $DOCKERFILES)
+          
+          # Преобразуем пути в подходящие для именования образов
+          IMAGE_NAMES=""
+          for folder in $FOLDERS; do
+            IMAGE_NAME=$(echo "$folder" | tr '/' '-')
+            IMAGE_NAMES+="$IMAGE_NAME "
+          done
+          
+          # Запишем две важные переменные: папки и имена образов
           echo "folders=$FOLDERS" >> $GITHUB_OUTPUT
+          echo "image_names=$IMAGE_NAMES" >> $GITHUB_OUTPUT
 
       - name: Setup QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3
@@ -50,5 +61,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ steps.find-dockerfiles.outputs.folders | tr '/' '-' }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ steps.find-dockerfiles.outputs.folders | tr '/' '-' }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ steps.find-dockerfiles.outputs.image_names }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ steps.find-dockerfiles.outputs.image_names }}:${{ github.sha }}
