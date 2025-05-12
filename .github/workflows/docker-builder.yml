@@ -30,20 +30,16 @@ jobs:
         run: |
           # Находим все Dockerfile (игнорируя корневой)
           mapfile -t DOCKER_PATHS < <(find . -mindepth 2 -type f -name Dockerfile)
-        
-          # Формируем компактный JSON
-          MATRIX_JSON=$(jq -n -c \
-            --argjson paths "$(printf '%s\n' "${DOCKER_PATHS[@]}" | jq -R -s 'map(select(. != "") | sub("^./"; ""))')" \
-            '{
-              include: ($paths | map({
-                project_path: .,
-                image_name: (. | gsub("/"; "-") | gsub("[^a-zA-Z0-9-]"; "-") | gsub("-+"; "-"))
-              }))
-            }')
-        
-          # Записываем в сжатом формате
-          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-          echo "Found projects: $MATRIX_JSON"
+         
+         {
+           echo "matrix<<EOF"
+           jq -n -c --argjson arr "$(printf '%s\n' "${DOCKER_PATHS[@]}" | jq -R -s .)" \
+             '$arr | map({
+               project_path: (. | sub("^./"; "")),
+               image_name: (. | gsub("/"; "-") | gsub("[^a-zA-Z0-9-]"; "-"))
+             }) | {include: .}'
+           echo "EOF"
+         } >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
