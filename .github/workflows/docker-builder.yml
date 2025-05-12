@@ -28,41 +28,22 @@ jobs:
       - name: Find valid Docker projects
         id: find-projects
         run: |
-          # Поиск папок с Dockerfile, исключая пустые имена
-          mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||' | grep -v '^$')
-          
-          # Проверка наличия проектов
-          if [ ${#DIRS[@]} -eq 0 ]; then
-            echo "::error::No Docker projects found!"
-            exit 1
-          fi
-          
-          # Массив JSON объектов
-          JSON_ENTRIES=()
-          for dir in "${DIRS[@]}"; do
-            # Чистим путь от посторонних символов
-            CLEAN_PATH=$(echo "$dir" | sed 's|[^a-zA-Z0-9-_.]|_|g')
-            
-            # Замена "/" на "-" для создания имени образа
-            IMAGE_NAME=$(echo "$CLEAN_PATH" | tr '/' '-')
-            
-            # Проверка имени образа на непустоту
-            if [[ -z "$IMAGE_NAME" || "$IMAGE_NAME" =~ ^[-]+$ ]]; then
-              echo "::warning::Project path '$dir' results in an invalid or empty image name."
-              continue
-            fi
-            
-            # Сохранение в массив JSON
-            JSON_ENTRIES+=("{\"project_path\":\"$dir\", \"image_name\": \"$IMAGE_NAME\"}")
-          done
-          
-          # Получение итогового JSON в один сжатый формат
-          MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -sc '.')
-          
-          # Запись матрицы в GITHUB_OUTPUT
+          # Находим все Dockerfile (игнорируя корневой)
+          mapfile -t DOCKER_PATHS < <(find . -mindepth 2 -type f -name Dockerfile)
+        
+          # Формируем компактный JSON
+          MATRIX_JSON=$(jq -n -c \
+            --argjson paths "$(printf '%s\n' "${DOCKER_PATHS[@]}" | jq -R -s 'map(select(. != "") | sub("^./"; ""))')" \
+            '{
+              include: ($paths | map({
+                project_path: .,
+                image_name: (. | gsub("/"; "-") | gsub("[^a-zA-Z0-9-]"; "-") | gsub("-+"; "-"))
+              }))
+            }')
+        
+          # Записываем в сжатом формате
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-          echo "Valid projects found:"
-          echo "$MATRIX_JSON" | jq .
+          echo "Found projects: $MATRIX_JSON"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
