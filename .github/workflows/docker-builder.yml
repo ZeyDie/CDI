@@ -26,17 +26,16 @@ jobs:
       - name: Find all Docker projects
         id: find-projects
         run: |
-          # Находим все папки с Dockerfile (игнорируем корневой Dockerfile если есть)
-          DIRS=$(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||')
-          echo "Found Docker projects:"
-          echo "$DIRS"
+          # Находим все папки с Dockerfile (игнорируем корневой Dockerfile)
+          mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||')
           
-          # Формируем JSON для matrix
-          MATRIX_JSON=$(jq -n --arg dirs "$DIRS" '
-            $dirs | split("\n") | map(select(. != "")) | 
-            map({"project_path": .}) | {"include": .}
-          ')
-          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          # Формируем корректный JSON для matrix
+          MATRIX_JSON=$(printf '%s\n' "${DIRS[@]}" | jq -R '.' | jq -s '{include: map({project_path: .})}')
+          
+          # Правильный вывод в GITHUB_OUTPUT
+          echo "matrix=$(echo "$MATRIX_JSON" | jq -c)" >> $GITHUB_OUTPUT
+          echo "Found projects:"
+          echo "$MATRIX_JSON" | jq .
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
