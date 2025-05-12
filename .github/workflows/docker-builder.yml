@@ -1,10 +1,9 @@
-name: Auto Build Docker Images
+name: Docker Image Builder
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      - main
+      - '*'
     paths:
       - '**/Dockerfile'
 
@@ -12,51 +11,43 @@ permissions:
   contents: read
   packages: write
 
-concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  discover_and_build:
+  build-and-push-images:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.find-projects.outputs.matrix }}
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
     steps:
-      - name: Checkout code
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Find valid Docker projects
-        id: find-projects
+      - name: Find all Dockerfiles recursively
+        id: find-dockerfiles
         run: |
-          # Находим все Dockerfile (игнорируя корневой)
-          mapfile -t DOCKER_PATHS < <(find . -mindepth 2 -type f -name Dockerfile)
-         
-         {
-           echo "matrix<<EOF"
-           jq -n -c --argjson arr "$(printf '%s\n' "${DOCKER_PATHS[@]}" | jq -R -s .)" \
-             '$arr | map({
-               project_path: (. | sub("^./"; "")),
-               image_name: (. | gsub("/"; "-") | gsub("[^a-zA-Z0-9-]"; "-"))
-             }) | {include: .}'
-           echo "EOF"
-         } >> $GITHUB_OUTPUT
+          DOCKERFILES=$(find . -type f -name Dockerfile)
+          FOLDERS=$(dirname $DOCKERFILES)
+          echo "folders=$FOLDERS" >> $GITHUB_OUTPUT
 
-      - name: Set up Docker Buildx
+      - name: Setup QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GitHub Container Registry
+      - name: Log into container registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
+      - name: Build and Push Docker images
+        uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./${{ matrix.project_path }}/Dockerfile
+          file: ./${{ steps.find-dockerfiles.outputs.folders }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ steps.find-dockerfiles.outputs.folders | tr '/' '-' }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ steps.find-dockerfiles.outputs.folders | tr '/' '-' }}:${{ github.sha }}
