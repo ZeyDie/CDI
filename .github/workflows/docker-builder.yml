@@ -51,7 +51,7 @@ jobs:
           done
           
           # Итоговая матрица
-          MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -s '.')
+          MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -sc '.')
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "Valid projects found:"
           echo "$MATRIX_JSON" | jq .
