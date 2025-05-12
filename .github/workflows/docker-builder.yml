@@ -1,12 +1,11 @@
 name: Docker Image Builder
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      - 'main'
+      - '*'  # Активация на любой ветке
     paths:
-      - '**/Dockerfile'
+      - '**/Dockerfile'  # Реакция только на изменения Dockerfile'ов
 
 permissions:
   contents: read
@@ -25,18 +24,22 @@ jobs:
       - name: Find all Dockerfiles recursively
         id: find-dockerfiles
         run: |
-          # Ищем все Dockerfiles рекурсивно
-          DOCKERFILES=$(find . -type f -name Dockerfile)
-          FOLDERS=$(dirname $DOCKERFILES)
-
-          # Формируем имена образов
-          I=0
-          for folder in $FOLDERS; do
-            IMAGE_NAME=$(echo "$folder" | sed 's|\./||; s|/|-|g')
-            echo "::set-output name=folder_$I::$folder" >> $GITHUB_OUTPUT
-            echo "::set-output name=image_name_$I::$IMAGE_NAME" >> $GITHUB_OUTPUT
-            ((I++))
-          done
+          # Ищем все Dockerfiles рекурсивно (игнорируем корневой)
+          mapfile -t DOCKER_PATHS < <(find . -mindepth 2 -type f -name Dockerfile)
+          
+          # Формируем JSON-матрицу
+          MATRIX_JSON=$(jq -n \
+            --argjson paths "$(printf '"%s"\n' "${DOCKER_PATHS[@]}" | jq -R -s 'map(select(. != "") | sub("^./"; ""))')" \
+            '{
+              include: ($paths | map({
+                folder: . | dirname,
+                image_name: (. | dirname | gsub("/"; "-") | gsub("[^a-zA-Z0-9-]"; "-")
+              }))
+            }')
+          
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "Found Dockerfiles:"
+          echo "$MATRIX_JSON" | jq .
 
       - name: Setup QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3
@@ -52,19 +55,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker images
-        needs: find-dockerfiles
-        runs-on: ubuntu-latest
-        strategy:
-          matrix:
-            folders: ${{ range(fromEntries(steps.find-dockerfiles.outputs)) }}
-            
-      - name: Build specific Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-            file: ./${{ matrix.folders.value }}/Dockerfile
-            platforms: linux/amd64,linux/arm64
-            push: true
-            tags: |
-              ghcr.io/${{ github.repository_owner }}/${{ matrix.folders.key }}:latest
-              ghcr.io/${{ github.repository_owner }}/${{ matrix.folders.key }}:${{ github.sha }}
+          file: ./${{ matrix.folder }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
