@@ -26,26 +26,28 @@ jobs:
       - name: Find valid Docker projects
         id: find-projects
         run: |
-          # Находим папки с Dockerfile
+          # Находим папки с Dockerfile, исключая пустые имена
           mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||' | grep -v '^$')
           
-          # Проверяем наличие проектов
+          # Проверяем, что найдены проекты
           if [ ${#DIRS[@]} -eq 0 ]; then
             echo "::error::No Docker projects found!"
             exit 1
           fi
           
-          # Формируем JSON в правильном формате
-          MATRIX_JSON=$(jq -n --argjson dirs "$(printf '%s\n' "${DIRS[@]}" | jq -R . | jq -s .)" '
-            $dirs | map({
-              project_path: .,
-              image_name: (. | gsub("/"; "-") | gsub("[^a-zA-Z0-9-]"; "-")
-            }) | {include: .}
-          ')
+          # Формируем JSON
+          JSON_ENTRIES=()
+          for dir in "${DIRS[@]}"; do
+            # Очищаем путь и формируем image_name заменой '/'
+            IMAGE_NAME=$(echo "$dir" | tr '/' '-')
+            
+            JSON_ENTRIES+=("{\"project_path\":\"$dir\", \"image_name\": \"$IMAGE_NAME\"}")
+          done
           
-          # Правильный вывод в GITHUB_OUTPUT
-          echo "matrix=$MATRIX_JSON" | tee -a $GITHUB_OUTPUT
-          echo "Found projects:"
+          # Формируем итоговую матрицу
+          MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -s '.')
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "Valid projects found:"
           echo "$MATRIX_JSON" | jq .
 
       - name: Set up Docker Buildx
