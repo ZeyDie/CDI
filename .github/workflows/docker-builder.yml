@@ -29,12 +29,17 @@ jobs:
       - name: Find all Docker projects
         id: set-matrix
         run: |
-          GRAALVM_DIRS=$(find java-graalvm -type f -name Dockerfile | sed 's|/Dockerfile||' | jq -R -s -c 'split("\n") | map(select(. != ""))')
-          GRAALVM_MATRIX=$(echo $GRAALVM_DIRS | jq 'map({"docker_dir": . | sub("java-graalvm/"; ""), "base_dir": "java-graalvm"})')
-          PT_DIRS=$(find pterodactyl-dockers -type f -name Dockerfile | sed 's|/Dockerfile||' | jq -R -s -c 'split("\n") | map(select(. != ""))')
-          PT_MATRIX=$(echo $PT_DIRS | jq 'map({"docker_dir": . | sub("pterodactyl-dockers/"; ""), "base_dir": "pterodactyl-dockers"})')
-          FINAL_MATRIX=$(echo "$GRAALVM_MATRIX $PT_MATRIX" | jq -s 'add')
-          echo "matrix={\"include\":$FINAL_MATRIX}" >> $GITHUB_OUTPUT
+            # 1. Find Java GraalVM projects
+            GRAALVM_DIRS=$(find java-graalvm -type f -name Dockerfile -printf '%h\n' | sort -u | jq -R -s -c 'split("\n") | map(select(. != "") | map(sub("java-graalvm/"; ""))')
+            GRAALVM_MATRIX=$(echo $GRAALVM_DIRS | jq 'map({"docker_dir": ., "base_dir": "java-graalvm"})')
+            
+            # 2. Find Pterodactyl projects
+            PT_DIRS=$(find pterodactyl-dockers -type f -name Dockerfile -printf '%h\n' | sort -u | jq -R -s -c 'split("\n") | map(select(. != "") | map(sub("pterodactyl-dockers/"; "")))')
+            PT_MATRIX=$(echo $PT_DIRS | jq 'map({"docker_dir": ., "base_dir": "pterodactyl-dockers"})')
+            
+            # 3. Combine and output
+            COMBINED=$(jq -n --argjson g "$GRAALVM_MATRIX" --argjson p "$PT_MATRIX" '$g + $p')
+            echo "matrix={\"include\":$COMBINED}" >> $GITHUB_OUTPUT
 
   build_and_push:
     needs: discover_docker_dirs
