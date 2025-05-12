@@ -40,7 +40,7 @@ jobs:
             JSON_ENTRIES+=("{\"folder\":\"$folder\",\"image_name\":\"$image_name\"}")
           done
           
-          MATRIX_JSON="{\"include\":[$(IFS=,; echo "${JSON_ENTRIES[*]}")]}"
+          MATRIX_JSON="[$(IFS=,; echo "${JSON_ENTRIES[*]}")]"
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "Found Dockerfiles:"
           echo "$MATRIX_JSON" | jq .
@@ -62,9 +62,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./${{ matrix.include.folder }}/Dockerfile
+          file: ./${{ matrix.folder }}/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.include.image_name }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.include.image_name }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
