@@ -13,11 +13,8 @@ permissions:
 jobs:
   build-and-push-images:
     runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    concurrency:
-      group: ${{ github.ref }}
-      cancel-in-progress: true
+    outputs:
+      matrix: ${{ steps.find-dockerfiles.outputs.matrix }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -51,6 +48,18 @@ jobs:
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "Found Dockerfiles:"
           echo "$MATRIX_JSON" | jq .
+
+  build:
+    needs: build-and-push-images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.build-and-push-images.outputs.matrix) }}
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
