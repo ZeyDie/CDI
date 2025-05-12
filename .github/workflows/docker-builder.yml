@@ -55,7 +55,7 @@ jobs:
           fi
           
           MATRIX_JSON=$(echo "${JSON_ARRAY[@]}" | jq -s '{include: .}')
-          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          matrix=$MATRIX_JSON
           echo "Valid projects:"
           echo "$MATRIX_JSON" | jq .
 
