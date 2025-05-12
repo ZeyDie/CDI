@@ -3,7 +3,7 @@ name: Docker Image Builder
 on:
   push:
     branches:
-      - '*'
+      - 'main'
     paths:
       - '**/Dockerfile'
 
