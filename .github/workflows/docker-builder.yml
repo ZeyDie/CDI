@@ -1,12 +1,11 @@
 name: Docker Image Builder
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      - '*'  # Активация на любой ветке
+      - '*'  # Срабатывание на любую ветку
     paths:
-      - '**/Dockerfile'  # Реакция только на изменения Dockerfile'ов
+      - '**/Dockerfile'  # Запускаем только при изменении Dockerfile'ов
 
 permissions:
   contents: read
@@ -25,22 +24,19 @@ jobs:
       - name: Find all Dockerfiles recursively
         id: find-dockerfiles
         run: |
-          # Ищем все Dockerfiles рекурсивно (игнорируем корневой)
-          mapfile -t DOCKER_PATHS < <(find . -mindepth 2 -type f -name Dockerfile)
-          
-          # Формируем JSON-матрицу
-          MATRIX_JSON=$(jq -n \
-            --argjson paths "$(printf '"%s"\n' "${DOCKER_PATHS[@]}" | jq -R -s 'map(select(. != "") | sub("^./"; ""))')" \
-            '{
-              include: ($paths | map({
-                folder: . | dirname,
-                image_name: (. | dirname | gsub("/"; "-") | gsub("[^a-zA-Z0-9-]"; "-")
-              }))
-            }')
-          
-          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-          echo "Found Dockerfiles:"
-          echo "$MATRIX_JSON" | jq .
+          # Рекурсивно находим все Dockerfiles
+          DOCKERFILES=$(find . -type f -name Dockerfile)
+          FOLDERS=$(dirname $DOCKERFILES)
+
+          # Формируем уникальные имена образов
+          I=0
+          for folder in $FOLDERS; do
+            # Нормализация пути: удаление начальной точки и замена слешей на тире
+            IMAGE_NAME=$(echo "$folder" | sed 's|\./||; s|/|-|g')
+            echo "::set-output name=folder_$I::$folder" >> $GITHUB_OUTPUT
+            echo "::set-output name=image_name_$I::$IMAGE_NAME" >> $GITHUB_OUTPUT
+            ((I++))
+          done
 
       - name: Setup QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3
@@ -56,12 +52,15 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker images
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./${{ matrix.folder }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
+        strategy:
+          matrix:
+            folders: ${{ range(fromEntries(steps.find-dockerfiles.outputs)) }}
+        run: |
+          # Построение конкретного Docker-образа
+          docker buildx build \
+            --context . \
+            --file ${{ matrix.folders.value }}/Dockerfile \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            --tag ghcr.io/${{ github.repository_owner }}/${{ matrix.folders.key }}:latest \
+            --tag ghcr.io/${{ github.repository_owner }}/${{ matrix.folders.key }}:${{ github.sha }}
