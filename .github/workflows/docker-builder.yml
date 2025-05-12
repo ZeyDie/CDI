@@ -36,6 +36,7 @@ jobs:
           JSON_ENTRIES=()
           for path in "${DOCKER_PATHS[@]}"; do
             folder=$(dirname "$path")
+            image_name=$(echo "$folder" | tr '/' '-' | tr -cd 'a-zA-Z0-9-' | sed 's/^-*//;s/-*$//;s/--*/-/g')
             # Проверка на пустое значение image_name
             if [ -z "$image_name" ]; then
               echo "::error::Image name is empty for folder: $folder"
