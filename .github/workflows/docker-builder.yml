@@ -25,36 +25,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Find valid Docker projects
-        id: find-projects
-        run: |
-          # Находим папки с Dockerfile, исключая пустые имена
-          mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||' | grep -v '^$')
+    - name: Find valid Docker projects
+      id: find-projects
+      run: |
+        # Находим папки с Dockerfile, исключая пустые имена
+        mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||' | grep -v '^$')
+        
+        # Проверка наличия проектов
+        if [ ${#DIRS[@]} -eq 0 ]; then
+          echo "::error::No Docker projects found!"
+          exit 1
+        fi
+        
+        # Формируем JSON
+        JSON_ENTRIES=()
+        for dir in "${DIRS[@]}"; do
+          # Очистка пути от опасных символов
+          CLEAN_PATH=$(echo "$dir" | sed 's|[^a-zA-Z0-9-_/.]|_|g')
           
-          # Проверка наличия проектов
-          if [ ${#DIRS[@]} -eq 0 ]; then
-            echo "::error::No Docker projects found!"
-            exit 1
+          # Создание безопасного имени образа
+          IMAGE_NAME=$(echo "$CLEAN_PATH" | tr '/' '-')
+          
+          # Проверка имени образа
+          if [[ -z "$IMAGE_NAME" || "$IMAGE_NAME" =~ ^[-]+$ ]]; then
+            echo "::warning::Project path '$dir' leads to an invalid or empty image name."
+            continue
           fi
           
-          # Формируем JSON
-          JSON_ENTRIES=()
-          for dir in "${DIRS[@]}"; do
-            # Обработка пути и очистка от нежелательных символов
-            CLEAN_PATH=$(echo "$dir" | sed 's|[^a-zA-Z0-9-]|-|g;s/-*$//;s/^-*//')
-            
-            # Генерация уникального имени образа
-            IMAGE_NAME=$(echo "$CLEAN_PATH" | tr '/' '-')
-            
-            # Преобразование в объект JSON
-            JSON_ENTRIES+=("{\"project_path\":\"$dir\", \"image_name\": \"$IMAGE_NAME\"}")
-          done
-          
-          # Итоговая матрица
-          MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -sc '.')
-          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-          echo "Valid projects found:"
-          echo "$MATRIX_JSON" | jq .
+          # Преобразование в объект JSON
+          JSON_ENTRIES+=("{\"project_path\":\"$dir\", \"image_name\": \"$IMAGE_NAME\"}")
+        done
+        
+        # Итоговая матрица
+        MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -sc '.')
+        echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+        echo "Valid projects found:"
+        echo "$MATRIX_JSON" | jq .
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
