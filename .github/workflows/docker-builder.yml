@@ -19,55 +19,51 @@ concurrency:
 jobs:
   discover_and_build:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.find-projects.outputs.matrix }}
-steps:
-  - name: Checkout code
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  - name: Find valid Docker projects
-    id: find-projects
-    run: |
-      # Находим папки с Dockerfile, исключая пустые имена
-      mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||' | grep -v '^$')
-      
-      # Проверяем, что найдены проекты
-      if [ ${#DIRS[@]} -eq 0 ]; then
-        echo "::error::No Docker projects found!"
-        exit 1
-      fi
-      
-      # Формируем JSON
-      JSON_ENTRIES=()
-      for dir in "${DIRS[@]}"; do
-        # Очищаем путь и формируем image_name заменой '/'
-        IMAGE_NAME=$(echo "$dir" | tr '/' '-')
-        
-        JSON_ENTRIES+=("{\"project_path\":\"$dir\", \"image_name\": \"$IMAGE_NAME\"}")
-      done
-      
-      # Формируем итоговую матрицу
-      MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -s '.')
-      echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-      echo "Valid projects found:"
-      echo "$MATRIX_JSON" | jq .
+      - name: Find valid Docker projects
+        id: find-projects
+        run: |
+          # Находим папки с Dockerfile
+          mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||' | grep -v '^$')
+          
+          # Проверяем наличие проектов
+          if [ ${#DIRS[@]} -eq 0 ]; then
+            echo "::error::No Docker projects found!"
+            exit 1
+          fi
+          
+          # Формируем JSON в правильном формате
+          MATRIX_JSON=$(jq -n --argjson dirs "$(printf '%s\n' "${DIRS[@]}" | jq -R . | jq -s .)" '
+            $dirs | map({
+              project_path: .,
+              image_name: (. | gsub("/"; "-") | gsub("[^a-zA-Z0-9-]"; "-")
+            }) | {include: .}
+          ')
+          
+          # Правильный вывод в GITHUB_OUTPUT
+          echo "matrix=$MATRIX_JSON" | tee -a $GITHUB_OUTPUT
+          echo "Found projects:"
+          echo "$MATRIX_JSON" | jq .
 
-  - name: Set up Docker Buildx
-    uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  - name: Login to GitHub Container Registry
-    uses: docker/login-action@v3
-    with:
-      registry: ghcr.io
-      username: ${{ github.repository_owner }}
-      password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  - name: Build and push
-    uses: docker/build-push-action@v6
-    with:
-      context: .
-      file: ./${{ matrix.project_path }}/Dockerfile
-      push: true
-      tags: |
-        ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
-        ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./${{ matrix.project_path }}/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
