@@ -28,17 +28,15 @@ jobs:
           # Ищем все Dockerfiles рекурсивно
           DOCKERFILES=$(find . -type f -name Dockerfile)
           FOLDERS=$(dirname $DOCKERFILES)
-          
-          # Преобразуем пути в подходящие для именования образов
-          IMAGE_NAMES=""
+
+          # Формируем имена образов
+          I=0
           for folder in $FOLDERS; do
-            IMAGE_NAME=$(echo "$folder" | tr '/' '-')
-            IMAGE_NAMES+="$IMAGE_NAME "
+            IMAGE_NAME=$(echo "$folder" | sed 's|\./||; s|/|-|g')
+            echo "::set-output name=folder_$I::$folder" >> $GITHUB_OUTPUT
+            echo "::set-output name=image_name_$I::$IMAGE_NAME" >> $GITHUB_OUTPUT
+            ((I++))
           done
-          
-          # Запишем две важные переменные: папки и имена образов
-          echo "folders=$FOLDERS" >> $GITHUB_OUTPUT
-          echo "image_names=$IMAGE_NAMES" >> $GITHUB_OUTPUT
 
       - name: Setup QEMU for multi-platform builds
         uses: docker/setup-qemu-action@v3
@@ -54,12 +52,19 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker images
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./${{ steps.find-dockerfiles.outputs.folders }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ steps.find-dockerfiles.outputs.image_names }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ steps.find-dockerfiles.outputs.image_names }}:${{ github.sha }}
+        needs: find-dockerfiles
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            folders: ${{ range(fromEntries(steps.find-dockerfiles.outputs)) }}
+        steps:
+          - name: Build specific Docker image
+            uses: docker/build-push-action@v5
+            with:
+              context: .
+              file: ./${{ matrix.folders.value }}/Dockerfile
+              platforms: linux/amd64,linux/arm64
+              push: true
+              tags: |
+                ghcr.io/${{ github.repository_owner }}/${{ matrix.folders.key }}:latest
+                ghcr.io/${{ github.repository_owner }}/${{ matrix.folders.key }}:${{ github.sha }}
