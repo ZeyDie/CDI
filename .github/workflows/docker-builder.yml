@@ -25,18 +25,16 @@ jobs:
           # Находим все Dockerfile (игнорируя корневой)
           mapfile -t DOCKER_PATHS < <(find . -mindepth 2 -type f -name Dockerfile -print0 | xargs -0 realpath --relative-to=. | grep -v '^$')
           
-          # Проверяем наличие
           if [ ${#DOCKER_PATHS[@]} -eq 0 ]; then
             echo "::error::No Dockerfiles found!"
             exit 1
           fi
           
-          # Формируем JSON вручную
           JSON_ENTRIES=()
           for path in "${DOCKER_PATHS[@]}"; do
             folder=$(dirname "$path")
-            image_name=$(echo "$folder" | tr '/' '-' | tr -cd 'a-zA-Z0-9-' | sed 's/^-*//;s/-*$//;s/--*/-/g')
-            # Проверка на пустое значение image_name
+            # Приводим всё к нижнему регистру и удаляем недопустимые символы
+            image_name=$(echo "$folder" | tr '[:upper:]' '[:lower:]' | tr '/' '-' | sed 's/[^a-z0-9-]//g' | sed 's/^-*//;s/-*$//;s/--*/-/g')
             if [ -z "$image_name" ]; then
               echo "::error::Image name is empty for folder: $folder"
               exit 1
@@ -82,5 +80,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
+            ghcr.io/${{ format('{0}', github.repository_owner | lower) }}/${{ matrix.image_name }}:latest
+            ghcr.io/${{ format('{0}', github.repository_owner | lower) }}/${{ matrix.image_name }}:${{ github.sha }}
