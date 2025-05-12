@@ -1,4 +1,4 @@
-name: Build Docker Images
+name: Auto Build Docker Images
 
 on:
   workflow_dispatch:
@@ -6,8 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'java-graalvm/**/Dockerfile'
-      - 'pterodactyl-dockers/**/Dockerfile'
+      - '**/Dockerfile'  # Триггерим только при изменении Docker-файлов
 
 permissions:
   contents: read
@@ -18,46 +17,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  discover_docker_dirs:
+  discover_and_build:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Find all Docker projects
-        id: set-matrix
+        id: find-projects
         run: |
-            # 1. Find Java GraalVM projects
-            GRAALVM_DIRS=$(find java-graalvm -type f -name Dockerfile -printf '%h\n' | sort -u | jq -R -s -c 'split("\n") | map(select(. != "") | map(sub("java-graalvm/"; ""))')
-            GRAALVM_MATRIX=$(echo $GRAALVM_DIRS | jq 'map({"docker_dir": ., "base_dir": "java-graalvm"})')
-            
-            # 2. Find Pterodactyl projects
-            PT_DIRS=$(find pterodactyl-dockers -type f -name Dockerfile -printf '%h\n' | sort -u | jq -R -s -c 'split("\n") | map(select(. != "") | map(sub("pterodactyl-dockers/"; "")))')
-            PT_MATRIX=$(echo $PT_DIRS | jq 'map({"docker_dir": ., "base_dir": "pterodactyl-dockers"})')
-            
-            # 3. Combine and output
-            COMBINED=$(jq -n --argjson g "$GRAALVM_MATRIX" --argjson p "$PT_MATRIX" '$g + $p')
-            echo "matrix={\"include\":$COMBINED}" >> $GITHUB_OUTPUT
-
-  build_and_push:
-    needs: discover_docker_dirs
-    name: "Build ${{ matrix.base_dir }}/${{ matrix.docker_dir }}"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{ fromJson(needs.discover_docker_dirs.outputs.matrix) }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU (multi-arch)
-        uses: docker/setup-qemu-action@v3
+          # Находим все папки с Dockerfile (игнорируем корневой Dockerfile если есть)
+          DIRS=$(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||')
+          echo "Found Docker projects:"
+          echo "$DIRS"
+          
+          # Формируем JSON для matrix
+          MATRIX_JSON=$(jq -n --arg dirs "$DIRS" '
+            $dirs | split("\n") | map(select(. != "")) | 
+            map({"project_path": .}) | {"include": .}
+          ')
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          buildkitd-flags: --debug
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -66,13 +48,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
           context: .
-          file: ./${{ matrix.base_dir }}/${{ matrix.docker_dir }}/Dockerfile
+          file: ./${{ matrix.project_path }}/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.base_dir }}-${{ matrix.docker_dir }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.base_dir }}-${{ matrix.docker_dir }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.project_path | replace('/', '-') }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.project_path | replace('/', '-') }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repository_url }}
