@@ -23,19 +23,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Find all Docker projects
+      - name: Find valid Docker projects
         id: find-projects
         run: |
-          # Находим все папки с Dockerfile (игнорируем корневой Dockerfile)
-          mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||')
+          # Находим папки с Dockerfile, исключая пустые имена
+          mapfile -t DIRS < <(find . -mindepth 2 -type f -name Dockerfile -exec dirname {} \; | sed 's|^\./||' | grep -v '^$')
           
-          # Формируем корректный JSON для matrix
-          MATRIX_JSON=$(printf '%s\n' "${DIRS[@]}" | jq -R '.' | jq -s '{include: map({project_path: .})}')
+          # Проверяем, что найдены проекты
+          if [ ${#DIRS[@]} -eq 0 ]; then
+            echo "No Docker projects found!"
+            exit 1
+          fi
           
-          # Правильный вывод в GITHUB_OUTPUT
-          echo "matrix=$(echo "$MATRIX_JSON" | jq -c)" >> $GITHUB_OUTPUT
-          echo "Found projects:"
+          # Формируем JSON с валидацией
+          MATRIX_JSON=$(jq -n --argjson dirs "$(printf '%s\n' "${DIRS[@]}" | jq -R . | jq -s .)" '
+            $dirs | map(select(length > 0)) | 
+            {include: map({project_path: . | sub("^/"; "") | sub("/+$"; "")})}
+          ')
+          
+          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
+          echo "Valid projects found:"
           echo "$MATRIX_JSON" | jq .
+
+      - name: Validate matrix
+        run: |
+          if [ -z "${{ toJson(matrix) }}" ]; then
+            echo "::error::No valid Docker projects detected"
+            exit 1
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -53,6 +68,5 @@ jobs:
           context: .
           file: ./${{ matrix.project_path }}/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.project_path }}:latest
-          labels: |
-            org.opencontainers.image.source=${{ github.repository_url }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ format('{0}', matrix.project_path | replace('/', '-') | trim) }}:latest
+          labels: ghcr.io/${{ github.repository_owner }}/${{ format('{0}', matrix.project_path | replace('/', '-') | regex_replace('[^a-zA-Z0-9-]', '-') | trim) }}:latest
