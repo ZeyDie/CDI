@@ -19,10 +19,8 @@ concurrency:
 jobs:
   discover_and_build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        project_path: ${{ fromJson(steps.find-projects.outputs.matrix) }}
-    
+    outputs:
+      matrix: ${{ steps.find-projects.outputs.matrix }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,23 +37,18 @@ jobs:
             exit 1
           fi
           
-          # Формируем JSON
+          # Формируем JSON с очисткой путей
           JSON_ENTRIES=()
           for dir in "${DIRS[@]}"; do
-            CLEAN_DIR=$(echo "$dir" | sed 's|^/||;s|/*$||')
-            JSON_ENTRIES+=("{\"project_path\":\"$CLEAN_DIR\"}")
+            # Очищаем путь и заменяем спецсимволы
+            CLEAN_PATH=$(echo "$dir" | sed 's|^/||;s|/*$||;s|[^a-zA-Z0-9-]|-|g')
+            JSON_ENTRIES+=("{\"project_path\":\"$dir\",\"image_name\":\"$CLEAN_PATH\"}")
           done
           
-          MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -s '.[]')
-          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
+          MATRIX_JSON=$(printf '%s\n' "${JSON_ENTRIES[@]}" | jq -s '{include: .}')
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "Valid projects found:"
-          echo "$MATRIX_JSON"
-
-      - name: Prepare Project Name
-        run: |
-          PROJECT_PATH="${{ matrix.project_path }}"
-          PROJECT_NAME="$(echo "$PROJECT_PATH" | tr '/' '-')"
-          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
+          echo "$MATRIX_JSON" | jq .
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -74,5 +67,5 @@ jobs:
           file: ./${{ matrix.project_path }}/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
