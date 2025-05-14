@@ -20,7 +20,7 @@ RUN adduser -D -h /home/container container && \
     chown container:container /opt/kafka
 
 # Используем стабильную версию Kafka
-ENV KAFKA_VERSION=3.7.0
+ENV KAFKA_VERSION=4.0.0
 ENV SCALA_VERSION=2.13
 ENV KAFKA_HOME=/opt/kafka
 ENV PATH="${PATH}:${KAFKA_HOME}/bin"
