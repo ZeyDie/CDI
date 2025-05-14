@@ -14,7 +14,8 @@ RUN apk add --no-cache --update \
     # Доп. зависимости GraalVM (если нужны нативные билды)
     && mkdir -p /opt/graalvm
 
-COPY --from=graalvm /opt/graalvm /opt/graalvm
+# Копируем GraalVM из правильного расположения
+COPY --from=graalvm /opt/graalvm-ce-java21-21.0.0 /opt/graalvm
 
 ENV JAVA_HOME=/opt/graalvm
 ENV PATH=$PATH:$JAVA_HOME/bin
