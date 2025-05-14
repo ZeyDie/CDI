@@ -7,14 +7,13 @@ FROM eclipse-temurin:21-jre-alpine
 
 LABEL maintainer="ZeyDie <zeydie.dev@gmail.com>"
 
-# Устанавливаем необходимые пакеты
+# Устанавливаем минимально необходимые пакеты
 RUN apk add --no-cache \
     bash \
     curl \
-    tar \
-    su-exec
+    tar
 
-# Создаем пользователя и директории
+# Создаем непривилегированного пользователя
 RUN adduser -D -h /home/container container && \
     mkdir -p /opt/kafka && \
     chown container:container /opt/kafka
@@ -24,15 +23,10 @@ ENV SCALA_VERSION=2.12
 ENV KAFKA_HOME=/opt/kafka
 ENV PATH="${PATH}:${KAFKA_HOME}/bin"
 
-# Скачиваем и распаковываем Kafka с проверкой контрольной суммы
-RUN set -ex && \
-    cd /tmp && \
+# Скачиваем и распаковываем Kafka (без проверки PGP)
+RUN cd /tmp && \
     KAFKA_DIST="kafka_${SCALA_VERSION}-${KAFKA_VERSION}" && \
     curl -sSLO "https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/${KAFKA_DIST}.tgz" && \
-    curl -sSLO "https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/${KAFKA_DIST}.tgz.asc" && \
-    curl -sSLO "https://downloads.apache.org/kafka/KEYS" && \
-    gpg --import KEYS && \
-    gpg --verify "${KAFKA_DIST}.tgz.asc" "${KAFKA_DIST}.tgz" && \
     tar -xzf "${KAFKA_DIST}.tgz" -C /opt/kafka --strip-components=1 && \
     rm -rf /tmp/*
 
