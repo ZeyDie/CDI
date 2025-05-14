@@ -3,19 +3,18 @@
 # Environment: Java with Apache Kafka 4.0.0
 # Minimum Panel Version: 0.6.0
 # ----------------------------------
-FROM ghcr.io/graalvm/native-image-community:21-ol9 AS graalvm
+FROM ghcr.io/graalvm/graalvm-ce:java21 AS graalvm
 
-# Копируем только JRE в Alpine
+# Копируем JRE в Alpine
 FROM alpine:3.18
 
 RUN apk add --no-cache --update \
     libstdc++ \
     zlib \
-    # Доп. зависимости GraalVM (если нужны нативные билды)
     && mkdir -p /opt/graalvm
 
-# Копируем GraalVM из правильного расположения
-COPY --from=graalvm /opt/graalvm-ce-java21-21.0.0 /opt/graalvm
+# Копируем GraalVM из официального образа
+COPY --from=graalvm /opt/graalvm-ce-java21-* /opt/graalvm
 
 ENV JAVA_HOME=/opt/graalvm
 ENV PATH=$PATH:$JAVA_HOME/bin
