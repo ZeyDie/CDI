@@ -9,9 +9,6 @@ RESET_COLOR='\033[0m'
 java -version
 
 ls
-apt-get install -y lib32z1
-chmod -R 777 libraries/launch4j
-chmod +X libraries/launch4j
 
 # Set environment variable that holds the Internal Docker IP
 INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
