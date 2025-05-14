@@ -24,8 +24,9 @@ RUN adduser -D -h /home/container container && \
 ENV KAFKA_VERSION=4.0.0
 ENV SCALA_VERSION=2.13
 ENV KAFKA_HOME=/home/container/kafka
+ENV KAFKA_LOG_DIRS="${KAFKA_HOME}/logs"
+
 ENV PATH="${PATH}:${KAFKA_HOME}/bin"
-ENV KAFKA_LOG_DIRS="/home/container/kafka-logs"
 
 # Скачиваем Kafka и распаковываем в домашнюю директорию
 RUN set -eux; \
@@ -38,13 +39,13 @@ RUN set -eux; \
     rm -rf /tmp/*
 
 # Настраиваем Kafka для работы из домашней директории
-RUN sed -i 's|log.dirs=/tmp/kafka-logs|log.dirs=${KAFKA_LOG_DIRS}|g' /home/container/kafka/config/server.properties && \
+RUN sed -i 's|log.dirs=/tmp/kafka-logs|log.dirs=${KAFKA_LOG_DIRS}|g' ${KAFKA_HOME}/config/server.properties && \
     chown -R container:container /home/container
 	
 # Настраиваем Kafka для работы из домашней директории
 RUN echo "broker.id=1" > /home/container/kafka/config/server.properties && \
-    echo "log.dirs=${KAFKA_LOG_DIRS}" >> /home/container/kafka/config/server.properties && \
-    echo "listeners=PLAINTEXT://:9092" >> /home/container/kafka/config/server.properties && \
+    echo "log.dirs=${KAFKA_LOG_DIRS}" >>  ${KAFKA_HOME}/config/server.properties && \
+    echo "listeners=PLAINTEXT://:9092" >>  ${KAFKA_HOME}/config/server.properties && \
     mkdir -p ${KAFKA_LOG_DIRS} && \
     echo "version=0" > ${KAFKA_LOG_DIRS}/meta.properties && \
     echo "broker.id=1" >> ${KAFKA_LOG_DIRS}/meta.properties && \
