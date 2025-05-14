@@ -14,9 +14,9 @@ RUN apk add --no-cache \
     tar \
     libstdc++
 
-# Создаем пользователя и структуру директорий
+# Создаем пользователя и базовые директории
 RUN adduser -D -h /home/container container && \
-    mkdir -p /home/container/kafka/{config,logs} && \
+    mkdir -p /home/container/kafka && \
     chown -R container:container /home/container
 
 # Настройка переменных окружения
@@ -37,8 +37,9 @@ RUN set -eux; \
     tar -xzf "${KAFKA_DIST}.tgz" -C ${KAFKA_HOME} --strip-components=1; \
     rm -rf /tmp/*
 
-# Базовая конфигурация Kafka
-RUN echo "broker.id=1" > ${KAFKA_HOME}/config/server.properties && \
+# Создаем директорию для логов и настраиваем Kafka
+RUN mkdir -p ${KAFKA_LOG_DIRS} && \
+    echo "broker.id=1" > ${KAFKA_HOME}/config/server.properties && \
     echo "log.dirs=${KAFKA_LOG_DIRS}" >> ${KAFKA_HOME}/config/server.properties && \
     echo "listeners=PLAINTEXT://:9092" >> ${KAFKA_HOME}/config/server.properties && \
     echo "version=0" > ${KAFKA_LOG_DIRS}/meta.properties && \
