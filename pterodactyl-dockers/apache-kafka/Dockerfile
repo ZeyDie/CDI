@@ -40,6 +40,15 @@ RUN set -eux; \
 # Настраиваем Kafka для работы из домашней директории
 RUN sed -i 's|log.dirs=/tmp/kafka-logs|log.dirs=${KAFKA_LOG_DIRS}|g' /home/container/kafka/config/server.properties && \
     chown -R container:container /home/container
+	
+# Настраиваем Kafka для работы из домашней директории
+RUN echo "broker.id=1" > /home/container/kafka/config/server.properties && \
+    echo "log.dirs=${KAFKA_LOG_DIRS}" >> /home/container/kafka/config/server.properties && \
+    echo "listeners=PLAINTEXT://:9092" >> /home/container/kafka/config/server.properties && \
+    mkdir -p ${KAFKA_LOG_DIRS} && \
+    echo "version=0" > ${KAFKA_LOG_DIRS}/meta.properties && \
+    echo "broker.id=1" >> ${KAFKA_LOG_DIRS}/meta.properties && \
+    chown -R container:container /home/container
 
 USER container
 WORKDIR /home/container

@@ -5,10 +5,8 @@ cd /home/container || exit 1
 CYAN='\033[0;36m'
 RESET_COLOR='\033[0m'
 
-echo "Hello from Apache Kafka!"
-
 KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
-bin/kafka-storage.sh format --standalone -t $KAFKA_CLUSTER_ID -c config/server.properties
+exec bin/kafka-storage.sh format --standalone -t $KAFKA_CLUSTER_ID -c config/server.properties
 
 # Print Current Java Version
 java -version
