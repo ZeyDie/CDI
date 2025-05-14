@@ -3,10 +3,12 @@
 # Environment: Java with Apache Kafka 4.0.0
 # Minimum Panel Version: 0.6.0
 # ----------------------------------
-FROM ghcr.io/graalvm/graalvm-ce:java21 AS graalvm
+FROM ghcr.io/graalvm/jdk:java21 AS graalvm
 
 # Копируем JRE в Alpine
 FROM alpine:3.18
+
+LABEL maintainer="ZeyDie <zeydie.dev@gmail.com>"
 
 RUN apk add --no-cache --update \
     libstdc++ \
@@ -18,8 +20,6 @@ COPY --from=graalvm /opt/graalvm-ce-java21-* /opt/graalvm
 
 ENV JAVA_HOME=/opt/graalvm
 ENV PATH=$PATH:$JAVA_HOME/bin
-
-MAINTAINER ZeyDie, <zeydie.dev@gmail.com>
 
 RUN apk add --no-cache --update \
     curl \
