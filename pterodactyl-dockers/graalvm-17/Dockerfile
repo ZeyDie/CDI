@@ -17,7 +17,7 @@ LABEL \
 ARG TARGETPLATFORM
 
 RUN mkdir -p /home/container && \
-    useradd -D -h /home/container container && \
+    useradd container && \
     chown -R container:container /home/container
 
 RUN microdnf update -y oraclelinux-release-el10 \
