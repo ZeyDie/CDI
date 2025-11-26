@@ -25,7 +25,7 @@ RUN fc-cache -f -v
 
 ARG JDK_MAJOR_VERSION=17
 ARG JDK_VERSION=17.0.9
-ARG JDK_BUILD=+0.9
+ARG JDK_BUILD=+9.1
 ARG GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/graalvm-community-jdk-${JDK_VERSION}_linux-x64_bin.tar.gz
 
 ENV LANG=en_US.UTF-8 \
