@@ -16,6 +16,10 @@ LABEL \
 
 ARG TARGETPLATFORM
 
+RUN mkdir -p /home/container && \
+    useradd -D -h /home/container container && \
+    chown -R container:container /home/container
+
 RUN microdnf update -y oraclelinux-release-el10 \
     && microdnf --enablerepo ol10_codeready_builder install -y bzip2-devel ed gcc gcc-c++ gcc-gfortran gzip file fontconfig less libcurl-devel make openssl openssl-devel readline-devel tar glibc-langpack-en \
     vi which xz-devel zlib-devel findutils glibc-static libstdc++ libstdc++-devel libstdc++-static zlib-static libxcrypt-compat \
@@ -48,10 +52,6 @@ RUN set -eux \
     done
 
 CMD java -version
-
-RUN mkdir -p /home/container && \
-    adduser -D -h /home/container container && \
-    chown -R container:container /home/container
 
 USER container
 WORKDIR /home/container
