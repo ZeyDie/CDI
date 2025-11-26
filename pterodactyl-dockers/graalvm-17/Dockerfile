@@ -49,7 +49,8 @@ RUN set -eux \
 
 CMD java -version
 
-RUN adduser -D -h /home/container container && \
+RUN mkdir -p /home/container && \
+    adduser -D -h /home/container container && \
     chown -R container:container /home/container
 
 USER container
