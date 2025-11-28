@@ -47,9 +47,9 @@ RUN set -eux \
     alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
     done
 	
-RUN dnf update -y && \
-    dnf install -y procps-ng && \
-    dnf clean all
+RUN microdnf update -y && \
+    microdnf install -y procps-ng && \
+    microdnf clean all
 	
 RUN echo "net.core.somaxconn = 65535" >> /etc/sysctl.conf && \
 	echo "net.core.netdev_max_backlog = 65536" >> /etc/sysctl.conf && \
