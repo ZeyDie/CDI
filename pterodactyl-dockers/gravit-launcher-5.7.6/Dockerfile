@@ -6,13 +6,11 @@ RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
 	
-RUN mkdir /home/container/data && \
-    cp -r /app/data /home/container/data && \
-    chown -R container:container /home/container/data
+RUN mkdir /home/container/modules && \
+    cp -r /app/modules /home/container/modules && \
+    chown -R container:container /home/container/modules
 
-RUN ln -sf /home/container/data /app/data
-
-ENV APP_HOME=/home/container/data
+RUN ln -sf /home/container/modules /app/modules
 
 USER container
 WORKDIR /home/container
