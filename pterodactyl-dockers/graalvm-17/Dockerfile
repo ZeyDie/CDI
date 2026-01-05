@@ -47,8 +47,9 @@ RUN set -eux \
     && GRAALVM_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/${GRAALVM_FILE}" \
     && echo "Target platform: $TARGETPLATFORM" \
     && echo "GraalVM file: $GRAALVM_FILE" \
+    && microdnf install -y libarchive \
     && curl --fail --silent --location --retry 3 -o "/tmp/${GRAALVM_FILE}" "${GRAALVM_URL}" \
-    && tar -xzf "/tmp/${GRAALVM_FILE}" -C /opt/ --no-same-owner --no-same-permissions \
+    && bsdtar -xzf "/tmp/${GRAALVM_FILE}" -C /opt/ \
     && rm -f "/tmp/${GRAALVM_FILE}" \
     && mv "/opt/graalvm-community-openjdk-${JDK_VERSION}${JDK_BUILD}" "$JAVA_HOME" \
     && mkdir -p "/usr/java" \
