@@ -35,9 +35,10 @@ RUN set -eux \
     && if [ "$TARGETPLATFORM" == "linux/amd64" ]; then GRAALVM_PKG=${GRAALVM_PKG/GRAALVM_ARCH/linux-x64}; fi \
     && if [ "$TARGETPLATFORM" == "linux/arm64" ]; then GRAALVM_PKG=${GRAALVM_PKG/GRAALVM_ARCH/linux-aarch64}; fi \
     && curl --fail --silent --location --retry 3 -o /tmp/graalvm.tar.gz ${GRAALVM_PKG} \
-    && tar -xvf /tmp/graalvm.tar.gz \
+    && tar -tzf /tmp/graalvm.tar.gz > /dev/null \
+    && tar -xzf /tmp/graalvm.tar.gz -C /opt/ --no-same-owner \
     && rm -f /tmp/graalvm.tar.gz \
-    && mv /tmp/graalvm-community-openjdk-$JDK_VERSION$JDK_BUILD $JAVA_HOME \
+    && mv "/opt/graalvm-community-openjdk-${JDK_VERSION}${JDK_BUILD}" "$JAVA_HOME" \
     # Set alternative links
     && mkdir -p "/usr/java" \
     && ln -sfT "$JAVA_HOME" /usr/java/default \
