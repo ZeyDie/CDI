@@ -46,10 +46,6 @@ RUN set -eux \
     [ ! -e "/usr/bin/$base" ]; \
     alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
     done
-	
-RUN microdnf update -y && \
-    microdnf install -y procps-ng && \
-    microdnf clean all
 
 CMD java -version
 
