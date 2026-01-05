@@ -33,7 +33,7 @@ ENV LANG=en_US.UTF-8 \
     JAVA_HOME=/opt/graalvm-community-java$JDK_MAJOR_VERSION
 
 RUN set -eux \
-    && curl --fail --silent --location --retry 3 ${GRAALVM_PKG} \
+    && curl --fail --silent --location --retry 3 -o /tmp/${GRAALVM_JDK} "${GRAALVM_PKG}" \
     && tar -tzf /tmp/${GRAALVM_JDK} > /dev/null \
     && tar -xzf /tmp/${GRAALVM_JDK} --no-same-owner \
     && mv /tmp/graalvm-community-openjdk-$JDK_VERSION$JDK_BUILD $JAVA_HOME \
