@@ -6,7 +6,7 @@ RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
 	
-RUN cp -r /app /home/container/ && \
+RUN cp -r /app /home/container/app && \
     chown -R container:container /home/container/app
 
 RUN ln -sf /home/container/app /app
@@ -14,7 +14,7 @@ RUN ln -sf /home/container/app /app
 ENV APP_HOME=/home/container/app
 
 USER container
-WORKDIR /home/container/app
+WORKDIR /home/container
 
 COPY --chown=container:container entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
