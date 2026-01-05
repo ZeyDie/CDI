@@ -48,7 +48,7 @@ RUN set -eux \
     && echo "Target platform: $TARGETPLATFORM" \
     && echo "GraalVM file: $GRAALVM_FILE" \
     && curl --fail --silent --location --retry 3 "${GRAALVM_URL}" \
-	| gunzip | tar x -C /opt/
+	| gunzip | tar x -C /opt/ \
     && mv "/opt/graalvm-community-openjdk-${JDK_VERSION}${JDK_BUILD}" "$JAVA_HOME" \
     && mkdir -p "/usr/java" \
     && ln -sfT "$JAVA_HOME" /usr/java/default \
