@@ -6,7 +6,7 @@ RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
 	
-RUN apt-get install -y unzip \
+RUN microdnf install -y unzip \
     curl -s "https://get.sdkman.io" | bash && \
     source "$HOME/.sdkman/bin/sdkman-init.sh" && \
     sdk install javafx 21.0.2
