@@ -31,26 +31,16 @@ ENV LANG=en_US.UTF-8 \
     JAVA_HOME=/opt/graalvm-community-java$JDK_MAJOR_VERSION
 
 RUN set -eux \
-    && case "$TARGETPLATFORM" in \
-        "linux/amd64") \
-            GRAALVM_ARCH="x64" \
-            ;; \
-        "linux/arm64") \
-            GRAALVM_ARCH="aarch64" \
-            ;; \
-        *) \
-            echo "Unsupported platform: $TARGETPLATFORM" \
-            exit 1 \
-            ;; \
-    esac \
-    && GRAALVM_FILE="graalvm-community-jdk-${JDK_VERSION}_linux-${GRAALVM_ARCH}_bin.tar.gz" \
-    && GRAALVM_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/${GRAALVM_FILE}" \
-    && echo "Target platform: $TARGETPLATFORM" \
-    && echo "GraalVM file: $GRAALVM_FILE" \
-    && microdnf install -y libarchive \
-    && curl --fail --silent --location --retry 3 -o "/tmp/${GRAALVM_FILE}" "${GRAALVM_URL}" \
-    && bsdtar -xzf "/tmp/${GRAALVM_FILE}" -C /opt/ \
-    && rm -f "/tmp/${GRAALVM_FILE}" \
+    && if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+        GRAALVM_ARCH="x64"; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        GRAALVM_ARCH="aarch64"; \
+    else \
+        echo "Unsupported platform: $TARGETPLATFORM"; exit 1; \
+    fi \
+    && GRAALVM_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/graalvm-community-jdk-${JDK_VERSION}_linux-${GRAALVM_ARCH}_bin.tar.gz" \
+    && echo "Downloading GraalVM for $TARGETPLATFORM..." \
+    && curl --fail --silent --location --retry 3 "${GRAALVM_URL}" | tar -xz -C /opt/ \
     && mv "/opt/graalvm-community-openjdk-${JDK_VERSION}${JDK_BUILD}" "$JAVA_HOME" \
     && mkdir -p "/usr/java" \
     && ln -sfT "$JAVA_HOME" /usr/java/default \
