@@ -26,16 +26,16 @@ RUN fc-cache -f -v
 ARG JDK_MAJOR_VERSION=17
 ARG JDK_VERSION=17.0.9
 ARG JDK_BUILD=+9.1
-ARG GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/graalvm-community-jdk-${JDK_VERSION}_linux-x64_bin.tar.gz
+ARG GRAALVM_JDK=graalvm-community-jdk-${JDK_VERSION}_linux-x64_bin.tar.gz
+ARG GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/${GRAALVM_JDK}
 
 ENV LANG=en_US.UTF-8 \
     JAVA_HOME=/opt/graalvm-community-java$JDK_MAJOR_VERSION
 
 RUN set -eux \
-    && if [ "$TARGETPLATFORM" == "linux/amd64" ]; then GRAALVM_PKG=${GRAALVM_PKG/GRAALVM_ARCH/linux-x64}; fi \
-    && if [ "$TARGETPLATFORM" == "linux/arm64" ]; then GRAALVM_PKG=${GRAALVM_PKG/GRAALVM_ARCH/linux-aarch64}; fi \
     && curl --fail --silent --location --retry 3 ${GRAALVM_PKG} \
-        | gunzip \
+    && tar -tzf /tmp/${GRAALVM_JDK} > /dev/null \
+    && tar -xzf /tmp/${GRAALVM_JDK} --no-same-owner \
     && mv graalvm-community-openjdk-$JDK_VERSION$JDK_BUILD $JAVA_HOME \
     # Set alternative links
     && mkdir -p "/usr/java" \
