@@ -6,11 +6,8 @@ RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
 	
-RUN mkdir /home/container/modules && \
-    cp -r /app/modules /home/container/modules && \
-    chown -R container:container /home/container/modules
-
-RUN ln -sf /home/container/modules /app/modules
+RUN cp -r /app /home/container/app && \
+    chown -R container:container /home/container/app
 
 USER container
 WORKDIR /home/container
