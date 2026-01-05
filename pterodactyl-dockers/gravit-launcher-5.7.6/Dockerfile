@@ -14,7 +14,7 @@ RUN ln -sf /home/container/app /app
 ENV APP_HOME=/home/container/app
 
 USER container
-WORKDIR /home/container
+WORKDIR /home/container/app
 
 COPY --chown=container:container entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
