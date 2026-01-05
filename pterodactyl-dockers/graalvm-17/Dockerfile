@@ -16,28 +16,36 @@ LABEL \
 
 ARG TARGETPLATFORM
 
+RUN microdnf update -y oraclelinux-release-el10 \
+    && microdnf --enablerepo ol10_codeready_builder install -y bzip2-devel ed gcc gcc-c++ gcc-gfortran gzip file fontconfig less libcurl-devel make openssl openssl-devel readline-devel tar glibc-langpack-en \
+    vi which xz-devel zlib-devel findutils glibc-static libstdc++ libstdc++-devel libstdc++-static zlib-static libxcrypt-compat \
+    && microdnf clean all
+
+RUN fc-cache -f -v
+
 ARG JDK_MAJOR_VERSION=17
 ARG JDK_VERSION=17.0.9
 ARG JDK_BUILD=+9.1
+ARG GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/graalvm-community-jdk-${JDK_VERSION}_GRAALVM_ARCH_bin.tar.gz
 
 ENV LANG=en_US.UTF-8 \
     JAVA_HOME=/opt/graalvm-community-java$JDK_MAJOR_VERSION
 
 RUN set -eux \
-    && if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
-        GRAALVM_ARCH="x64"; \
-    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-        GRAALVM_ARCH="aarch64"; \
-    else \
-        echo "Unsupported platform: $TARGETPLATFORM"; exit 1; \
-    fi \
-    && GRAALVM_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/graalvm-community-jdk-${JDK_VERSION}_linux-${GRAALVM_ARCH}_bin.tar.gz" \
-    && echo "Downloading GraalVM for $TARGETPLATFORM..." \
-    && curl --fail --silent --location --retry 3 "${GRAALVM_URL}" | tar -xz -C /opt/ \
-    && mv "/opt/graalvm-community-openjdk-${JDK_VERSION}${JDK_BUILD}" "$JAVA_HOME" \
+    && if [ "$TARGETPLATFORM" == "linux/amd64" ]; then GRAALVM_PKG=${GRAALVM_PKG/GRAALVM_ARCH/linux-x64}; fi \
+    && if [ "$TARGETPLATFORM" == "linux/arm64" ]; then GRAALVM_PKG=${GRAALVM_PKG/GRAALVM_ARCH/linux-aarch64}; fi \
+    && curl --fail --silent --location --retry 3 ${GRAALVM_PKG} \
+        | gunzip | tar x -C /opt/ \
+    && mv /opt/graalvm-community-openjdk-$JDK_VERSION$JDK_BUILD $JAVA_HOME \
+    # Set alternative links
     && mkdir -p "/usr/java" \
     && ln -sfT "$JAVA_HOME" /usr/java/default \
-    && ln -sfT "$JAVA_HOME" /usr/java/latest
+    && ln -sfT "$JAVA_HOME" /usr/java/latest \
+    && for bin in "$JAVA_HOME/bin/"*; do \
+    base="$(basename "$bin")"; \
+    [ ! -e "/usr/bin/$base" ]; \
+    alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
+    done
 
 CMD java -version
 
