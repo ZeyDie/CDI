@@ -34,19 +34,13 @@ ENV LANG=en_US.UTF-8 \
 RUN set -eux \
     && if [ "$TARGETPLATFORM" == "linux/amd64" ]; then GRAALVM_PKG=${GRAALVM_PKG/GRAALVM_ARCH/linux-x64}; fi \
     && if [ "$TARGETPLATFORM" == "linux/arm64" ]; then GRAALVM_PKG=${GRAALVM_PKG/GRAALVM_ARCH/linux-aarch64}; fi \
-    && curl --fail --silent --location --retry 3 -o /tmp/graalvm.tar.gz ${GRAALVM_PKG} \
-    && tar -tzf /tmp/graalvm.tar.gz > /dev/null \
-    && tar -xzf /tmp/graalvm.tar.gz -C /opt/ --no-same-owner \
-    && rm -f /tmp/graalvm.tar.gz \
-    && mv "/opt/graalvm-community-openjdk-${JDK_VERSION}${JDK_BUILD}" "$JAVA_HOME" \
+    && curl --fail --silent --location --retry 3 ${GRAALVM_PKG} \
+        | gunzip | tar x -C /opt/ \
+    && mv /opt/graalvm-community-openjdk-$JDK_VERSION$JDK_BUILD $JAVA_HOME \
     # Set alternative links
     && mkdir -p "/usr/java" \
     && ln -sfT "$JAVA_HOME" /usr/java/default \
     && ln -sfT "$JAVA_HOME" /usr/java/latest \
-    && for bin in "$JAVA_HOME/bin/"*; do \
-    base="$(basename "$bin")"; \
-    [ ! -e "/usr/bin/$base" ]; \
-    alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
     done
 
 CMD java -version
