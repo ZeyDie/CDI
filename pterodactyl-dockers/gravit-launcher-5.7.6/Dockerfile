@@ -5,6 +5,11 @@ CMD java -version
 RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
+	
+RUN cp -r /app /home/container/ && \
+    chown -R container:container /home/container/app
+
+RUN ln -sf /home/container/app /app
 
 USER container
 WORKDIR /home/container
