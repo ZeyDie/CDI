@@ -27,29 +27,30 @@ ARG JDK_MAJOR_VERSION=21
 ARG JDK_VERSION=21.0.2
 ARG JDK_BUILD=+13.1
 
-RUN set -eux \
-    && if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
-        export GRAALVM_ARCH="x64"; \
-    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-        export GRAALVM_ARCH="aarch64"; \
-    else \
-        echo "Unsupported platform: $TARGETPLATFORM"; exit 1; \
-    fi
-
-ARG GRAALVM_JDK=graalvm-community-jdk-${JDK_VERSION}_linux-${GRAALVM_ARCH}_bin.tar.gz
-ARG GRAALVM_PKG=https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/${GRAALVM_JDK}
-
 ENV LANG=en_US.UTF-8 \
     JAVA_HOME=/opt/graalvm-community-java$JDK_MAJOR_VERSION
 
 RUN set -eux \
+    && case "$TARGETPLATFORM" in \
+        "linux/amd64") \
+            GRAALVM_ARCH="x64" \
+            ;; \
+        "linux/arm64") \
+            GRAALVM_ARCH="aarch64" \
+            ;; \
+        *) \
+            echo "Unsupported platform: $TARGETPLATFORM" \
+            exit 1 \
+            ;; \
+    esac \
+    && GRAALVM_FILE="graalvm-community-jdk-${JDK_VERSION}_linux-${GRAALVM_ARCH}_bin.tar.gz" \
+    && GRAALVM_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${JDK_VERSION}/${GRAALVM_FILE}" \
     && echo "Target platform: $TARGETPLATFORM" \
-    && echo "GraalVM file: $GRAALVM_JDK" \
-    && curl --fail --silent --location --retry 3 -o "/tmp/${GRAALVM_JDK}" "${GRAALVM_PKG}" \
-    && tar -xzf "/tmp/${GRAALVM_JDK}" -C /opt/ --no-same-owner \
-    && rm -f "/tmp/${GRAALVM_JDK}" \
+    && echo "GraalVM file: $GRAALVM_FILE" \
+    && curl --fail --silent --location --retry 3 -o "/tmp/${GRAALVM_FILE}" "${GRAALVM_URL}" \
+    && tar -xzf "/tmp/${GRAALVM_FILE}" -C /opt/ --no-same-owner \
+    && rm -f "/tmp/${GRAALVM_FILE}" \
     && mv "/opt/graalvm-community-openjdk-${JDK_VERSION}${JDK_BUILD}" "$JAVA_HOME" \
-    # Set alternative links
     && mkdir -p "/usr/java" \
     && ln -sfT "$JAVA_HOME" /usr/java/default \
     && ln -sfT "$JAVA_HOME" /usr/java/latest
