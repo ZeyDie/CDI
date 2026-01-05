@@ -40,8 +40,7 @@ RUN set -eux \
     # Set alternative links
     && mkdir -p "/usr/java" \
     && ln -sfT "$JAVA_HOME" /usr/java/default \
-    && ln -sfT "$JAVA_HOME" /usr/java/latest \
-    done
+    && ln -sfT "$JAVA_HOME" /usr/java/latest
 
 CMD java -version
 
