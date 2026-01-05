@@ -35,7 +35,7 @@ ENV LANG=en_US.UTF-8 \
 RUN set -eux \
     && curl --fail --silent --location --retry 3 -o /tmp/${GRAALVM_JDK} "${GRAALVM_PKG}" \
     && tar -tzf /tmp/${GRAALVM_JDK} > /dev/null \
-    && tar -C "/temp" -xzf /tmp/${GRAALVM_JDK} --no-same-owner \
+    && tar -C "/tmp" -xzf /tmp/${GRAALVM_JDK} --no-same-owner \
     && mv /tmp/graalvm-community-openjdk-$JDK_VERSION$JDK_BUILD $JAVA_HOME \
     # Set alternative links
     && mkdir -p "/usr/java" \
