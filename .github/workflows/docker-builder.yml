@@ -22,7 +22,6 @@ jobs:
       - name: Find all Dockerfiles
         id: find-dockerfiles
         run: |
-          # Находим все Dockerfile (игнорируя корневой)
           mapfile -t DOCKER_PATHS < <(find . -mindepth 2 -type f -name Dockerfile -print0 | xargs -0 realpath --relative-to=. | grep -v '^$')
           
           if [ ${#DOCKER_PATHS[@]} -eq 0 ]; then
@@ -33,7 +32,6 @@ jobs:
           JSON_ENTRIES=()
           for path in "${DOCKER_PATHS[@]}"; do
             folder=$(dirname "$path")
-            # Приводим всё к нижнему регистру и удаляем недопустимые символы
             image_name=$(echo "$folder" | tr '[:upper:]' '[:lower:]' | tr '/' '-' | sed 's/[^a-z0-9-]//g' | sed 's/^-*//;s/-*$//;s/--*/-/g')
             if [ -z "$image_name" ]; then
               echo "::error::Image name is empty for folder: $folder"
