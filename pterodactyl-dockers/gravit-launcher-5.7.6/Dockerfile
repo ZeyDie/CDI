@@ -11,6 +11,8 @@ RUN cp -r /app /home/container/ && \
 
 RUN ln -sf /home/container/app /app
 
+ENV APP_HOME=/home/container/app
+
 USER container
 WORKDIR /home/container
 
