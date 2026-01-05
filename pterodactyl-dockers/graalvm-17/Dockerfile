@@ -1,8 +1,4 @@
 FROM ghcr.io/graalvm/graalvm-community:17.0.9-ol9
-
-RUN microdnf update -y && \
-    microdnf install -y procps-ng && \
-    microdnf clean all
 	
 RUN echo "net.core.somaxconn = 65535" >> /etc/sysctl.d/99-custom.conf && \
 	echo "net.core.netdev_max_backlog = 65536" >> /etc/sysctl.d/99-custom.conf && \
