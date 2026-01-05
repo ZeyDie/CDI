@@ -27,6 +27,9 @@ ARG JDK_MAJOR_VERSION=17
 ARG JDK_VERSION=17.0.9
 ARG JDK_BUILD=+9.1
 
+ENV LANG=en_US.UTF-8 \
+    JAVA_HOME=/opt/graalvm-community-java$JDK_MAJOR_VERSION
+
 RUN set -eux \
     && case "$TARGETPLATFORM" in \
         "linux/amd64") \
