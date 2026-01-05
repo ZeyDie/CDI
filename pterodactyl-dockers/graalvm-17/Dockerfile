@@ -16,11 +16,6 @@ LABEL \
 
 ARG TARGETPLATFORM
 
-RUN microdnf update -y oraclelinux-release-el10 \
-    && microdnf --enablerepo ol10_codeready_builder install -y bzip2-devel ed gcc gcc-c++ gcc-gfortran gzip file fontconfig less libcurl-devel make openssl openssl-devel readline-devel tar glibc-langpack-en \
-    vi which xz-devel zlib-devel findutils glibc-static libstdc++ libstdc++-devel libstdc++-static zlib-static libxcrypt-compat \
-    && microdnf clean all
-
 RUN fc-cache -f -v
 
 ARG JDK_MAJOR_VERSION=17
