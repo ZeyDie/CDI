@@ -1,5 +1,9 @@
 FROM zabbix/zabbix-web-nginx-pgsql:alpine-7.4-latest
 
+RUN mkdir -p /home/container && \
+    useradd container && \
+    chown -R container:container /home/container \
+
 USER container
 WORKDIR /home/container
 
