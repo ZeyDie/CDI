@@ -1,4 +1,4 @@
-FROM zabbix/zabbix-web-nginx-mysql:alpine-7.4-latest
+FROM zabbix/zabbix-web-nginx-mysql:ol-7.4-latest
 
 RUN mkdir -p /home/container && \
     useradd container && \

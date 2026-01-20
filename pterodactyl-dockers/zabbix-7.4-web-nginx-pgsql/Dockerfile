@@ -1,4 +1,4 @@
-FROM zabbix/zabbix-web-nginx-pgsql:alpine-7.4-latest
+FROM zabbix/zabbix-web-nginx-pgsql:ol-7.4-latest
 
 RUN mkdir -p /home/container && \
     useradd container && \
