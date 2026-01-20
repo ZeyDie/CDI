@@ -12,6 +12,9 @@ RUN chown -R container:container /etc/nginx && \
 USER container
 WORKDIR /home/container
 
+VOLUME /etc/zabbix /home/container/zabbix
+VOLUME /etc/nginx /home/container/nginx
+
 COPY --chown=container:container entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
