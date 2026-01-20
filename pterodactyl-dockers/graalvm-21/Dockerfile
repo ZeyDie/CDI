@@ -2,8 +2,6 @@ FROM ghcr.io/graalvm/graalvm-community:21.0.2-ol9
 
 CMD java -version
 
-RUN apt-get -y install git
-
 RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
