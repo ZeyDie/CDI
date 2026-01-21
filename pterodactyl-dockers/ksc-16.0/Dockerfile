@@ -3,8 +3,8 @@ FROM debian:trixie-slim
 RUN echo "Upgrade packages" && \
     apt-get upgrade && apt-get update
 
-RUN echo "Install curl" && \
-    apt-get install -y curl
+RUN echo "Install curl & systemctl" && \
+    apt-get install -y curl systemctl
 
 RUN echo "Install Kaspersky Security Center" && \
     curl -O "https://products.s.kaspersky-labs.com/administrationkit/ksc10/16.0.0.254/russian-INT-26376848-ru/979b69a60d4f4abfbe34a28a427f1740/ksc64_16.0.0-254_amd64.deb" && \
