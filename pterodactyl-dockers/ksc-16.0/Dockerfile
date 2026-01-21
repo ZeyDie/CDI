@@ -1,10 +1,5 @@
 FROM debian:trixie-slim
 
-RUN useradd ksc && \
-    groupadd kladmins && \
-    gpasswd -a ksc kladmins && \
-    usermod -g kladmins ksc
-
 RUN echo "Upgrade packages" && \
     apt-get upgrade && apt-get update
 
@@ -13,14 +8,13 @@ RUN echo "Install curl" && \
 
 RUN echo "Install Kaspersky Security Center" && \
     curl -O "https://products.s.kaspersky-labs.com/administrationkit/ksc10/16.0.0.254/russian-INT-26376848-ru/979b69a60d4f4abfbe34a28a427f1740/ksc64_16.0.0-254_amd64.deb" && \
-    dpkg -i "ksc64_16.0.0-254_amd64.deb"
+    dpkg -i "ksc64_16.0.0-254_amd64.deb" && \
+    rm -rf "ksc64_16.0.0-254_amd64.deb"
 
 RUN echo "Install Kaspersky Security Center Web Console" && \
     curl -O "https://products.s.kaspersky-labs.com/administrationkit/ksc10/16.0.0.254/russian-INT-26376848-ru/ec9f4b7ec68547ec8c2dd0eed20f9a07/ksc-web-console-16.0.378.x86_64.deb" && \
-    dpkg -i "ksc-web-console-16.0.378.x86_64.deb"
-
-RUN echo "Clean up" && \
-    rm -rf "*.deb"
+    dpkg -i "ksc-web-console-16.0.378.x86_64.deb" && \
+    rm -rf "ksc-web-console-16.0.378.x86_64.deb"
 
 RUN echo "Postinstall Kaspersky Security Center" && \
     /opt/kaspersky/ksc64/lib/bin/setup/postinstall.pl | echo "Y"
