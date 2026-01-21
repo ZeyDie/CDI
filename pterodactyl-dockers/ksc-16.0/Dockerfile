@@ -3,11 +3,8 @@ FROM debian:trixie-slim
 RUN echo "Upgrade packages" && \
     apt-get upgrade && apt-get update
 
-RUN echo "Install curl & systemctl" && \
-    apt-get install -y curl systemctl
-
-RUN echo "Install curl и wget" && \
-    apt-get install -y curl wget
+RUN echo "Install wget curl systemctl" && \
+    apt-get install -y wget curl systemctl
 
 RUN echo "Install Kaspersky Security Center" && \
     wget --tries=3 --timeout=30 --waitretry=5 --progress=dot:giga \
