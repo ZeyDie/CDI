@@ -10,7 +10,6 @@ RUN echo "Install Kaspersky Security Center" && \
     curl -L --retry 3 --retry-delay 5 --connect-timeout 30 \
          --max-time 300 --progress-bar \
          -O "https://products.s.kaspersky-labs.com/administrationkit/ksc10/16.0.0.254/russian-INT-26376848-ru/979b69a60d4f4abfbe34a28a427f1740/ksc64_16.0.0-254_amd64.deb" && \
-    ls -lh "ksc64_16.0.0-254_amd64.deb" && \
     dpkg -i "ksc64_16.0.0-254_amd64.deb" && \
     rm -rf "ksc64_16.0.0-254_amd64.deb"
 
