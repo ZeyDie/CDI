@@ -16,8 +16,8 @@ RUN echo "Install Kaspersky Security Center Web Console" && \
     dpkg -i "ksc-web-console-16.0.378.x86_64.deb" && \
     rm -rf "ksc-web-console-16.0.378.x86_64.deb"
 
-RUN echo "Postinstall Kaspersky Security Center" && \
-    /opt/kaspersky/ksc64/lib/bin/setup/postinstall.pl | echo "Y"
+RUN apt-get install -y yes && \
+    yes Y | /opt/kaspersky/ksc64/lib/bin/setup/postinstall.pl
 
 RUN mkdir -p /home/container && \
     useradd container && \
