@@ -1,6 +1,8 @@
-FROM bellsoft/liberica-runtime-container:jdk-21-glibc
+FROM ghcr.io/graalvm/graalvm-community:21.0.2-ol9
 
 CMD java -version
+
+RUN apt-get update && apt-get install -y openjfx
 
 RUN mkdir -p /home/container && \
     useradd container && \
