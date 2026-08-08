@@ -1,5 +1,7 @@
 FROM bellsoft/liberica-runtime-container:jdk-21-glibc
 
+CMD java -version
+
 RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
