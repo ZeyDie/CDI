@@ -1,4 +1,4 @@
-  FROM azul/zulu-openjdk-debian:25-latest AS prod
+FROM azul/zulu-openjdk-debian:25-latest AS prod
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   osslsigncode \
@@ -22,6 +22,8 @@ CMD java -version
 RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
+
+RUN chmod +x ./bin/launchserver
 
 USER container
 WORKDIR /home/container
