@@ -1,4 +1,4 @@
-FROM ghcr.io/graalvm/graalvm-community:21.0.2-ol9
+FROM ghcr.io/rikodev/pterodactyl-graalvm:21-JDK
 
 CMD java -version
 
