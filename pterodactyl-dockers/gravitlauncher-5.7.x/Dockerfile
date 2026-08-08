@@ -23,10 +23,10 @@ RUN mkdir -p /home/container && \
     useradd container && \
     chown -R container:container /home/container
 
-RUN chmod +x ./bin/launchserver
-
 USER container
 WORKDIR /home/container
+
+RUN chmod +x bin/launchserver
 
 COPY --chown=container:container entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
