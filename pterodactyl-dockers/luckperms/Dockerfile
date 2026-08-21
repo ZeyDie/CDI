@@ -1,5 +1,7 @@
 FROM ghcr.io/luckperms/luckperms:v5.4.166
 
+USER root
+
 CMD java -version
 
 RUN mkdir -p /home/container && \
