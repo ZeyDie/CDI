@@ -66,6 +66,17 @@ fi
 
 cd /home/container || exit 1
 
+# STARTUP обычно содержит относительный путь к jar-файлу
+# (java -jar luckperms-standalone.jar ...), а сам jar лежит в /opt/luckperms.
+# Кладём симлинк в /home/container, чтобы относительный путь резолвился,
+# не трогая при этом cwd (он должен остаться /home/container, чтобы логи/
+# конфиги, которые LuckPerms может писать рядом с jar, попадали в volume).
+if [ -f /opt/luckperms/luckperms-standalone.jar ]; then
+  ln -sfn /opt/luckperms/luckperms-standalone.jar /home/container/luckperms-standalone.jar 2>/dev/null \
+    && echo -e "${CYAN}Linked luckperms-standalone.jar -> /opt/luckperms/luckperms-standalone.jar${RESET_COLOR}" \
+    || echo -e "${CYAN}WARNING: could not symlink jar into /home/container${RESET_COLOR}"
+fi
+
 INTERNAL_IP=$(ip route get 1 2>/dev/null | awk '{print $(NF-2);exit}') || true
 export INTERNAL_IP
 
