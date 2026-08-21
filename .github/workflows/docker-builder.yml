@@ -57,6 +57,21 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Resolve entrypoint.sh for this image
+        run: |
+          FOLDER="${{ matrix.folder }}"
+          if [ -f "${FOLDER}/entrypoint.sh" ]; then
+            echo "Using entrypoint.sh from ${FOLDER}/"
+            cp -f "${FOLDER}/entrypoint.sh" ./entrypoint.sh
+          elif [ -f ./entrypoint.sh ]; then
+            echo "Using entrypoint.sh from repository root"
+          else
+            echo "::error::No entrypoint.sh in ${FOLDER}/ or repository root"
+            exit 1
+          fi
+          echo "---- entrypoint.sh (first lines) ----"
+          head -n 15 ./entrypoint.sh
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
