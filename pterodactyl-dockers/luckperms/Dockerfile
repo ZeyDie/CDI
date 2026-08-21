@@ -4,7 +4,6 @@ USER root
 
 RUN mkdir -p /home/container && \
     adduser -D container && \
-    ln -sfn /home/container/data /opt/luckperms/data && \
     chown -R container:container /home/container
 
 USER container
