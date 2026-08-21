@@ -1,9 +1,9 @@
-FROM ghcr.io/luckperms/luckperms
+FROM ghcr.io/luckperms/luckperms:v5.4.166
 
 CMD java -version
 
 RUN mkdir -p /home/container && \
-    useradd container && \
+    adduser container && \
     chown -R container:container /home/container
 
 USER container
