@@ -5,7 +5,7 @@ USER root
 CMD java -version
 
 RUN mkdir -p /home/container && \
-    adduser container && \
+    adduser -D container && \
     chown -R container:container /home/container
 
 USER container
