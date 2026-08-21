@@ -11,6 +11,8 @@ RUN mkdir -p /home/container && \
 USER container
 WORKDIR /home/container
 
+COPY /opt/luckperms/luckperms-standalone.jar .
+
 COPY --chown=container:container entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
