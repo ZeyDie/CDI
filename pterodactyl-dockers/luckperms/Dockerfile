@@ -1,12 +1,10 @@
 FROM ghcr.io/luckperms/luckperms:v5.4.166
 
 USER root
-RUN ln -s /home/container/data /opt/luckperms/data
-
-CMD java -version
 
 RUN mkdir -p /home/container && \
     adduser -D container && \
+    cp /opt/luckperms/luckperms-standalone.jar /home/container/ && \
     chown -R container:container /home/container
 
 USER container
