@@ -22,7 +22,12 @@ RUN mkdir -p /opt/luckperms/bundled-extensions \
          cp -a /opt/luckperms/data/extensions/. /opt/luckperms/bundled-extensions/ 2>/dev/null || true; \
        fi \
     && ls -la /opt/luckperms/bundled-extensions/ || true
-
+    
+# data должна быть writable для uid Ptero (часто 999)
+RUN mkdir -p /opt/luckperms/data/extensions /opt/luckperms/data/libs \
+ && chmod -R 777 /opt/luckperms/data \
+ && cp -a /opt/luckperms/bundled-extensions/. /opt/luckperms/data/extensions/ 2>/dev/null || true
+ 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
