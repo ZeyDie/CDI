@@ -32,8 +32,7 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENV USER=container \
-    HOME=/home/container \
-    LUCKPERMS_REST_HTTP_PORT=8080
+    HOME=/home/container
 
 WORKDIR /home/container
 
