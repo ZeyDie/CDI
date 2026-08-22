@@ -3,7 +3,7 @@ FROM ghcr.io/luckperms/rest-api:latest
 USER root
 
 RUN mkdir -p /home/container && \
-    useradd container && \
+    adduser -D container && \
     chown -R container:container /home/container
 
 USER container
