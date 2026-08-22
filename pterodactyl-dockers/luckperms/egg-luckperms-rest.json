@@ -1,0 +1,122 @@
+{
+  "_comment": "LuckPerms Standalone + REST API for Pterodactyl. Build image from Dockerfile in this folder.",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2026-08-22T10:00:00+03:00",
+  "name": "LuckPerms REST API",
+  "author": "elarpg",
+  "description": "LuckPerms standalone with REST API extension. Shares the same remote DB as Minecraft LP. Primary port = REST HTTP.",
+  "features": null,
+  "docker_images": {
+    "LuckPerms REST": "ghcr.io/zeydie/pterodactyl-dockers-luckperms:latest"
+  },
+  "file_denylist": [],
+  "startup": "java -jar /opt/luckperms/luckperms-standalone.jar --docker",
+  "config": {
+    "files": "{}",
+    "startup": "{\n    \"done\": \"Successfully enabled\"\n}",
+    "logs": "{}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\n# Первый запуск: создаём каталоги и пример config\nmkdir -p /mnt/server/extensions\ncd /mnt/server\nif [ ! -f config.yml ]; then\n  cat > config.yml << 'YAML'\n# LuckPerms standalone (Pterodactyl)\n# Env LUCKPERMS_* из Variables egg перекрывают этот файл.\nserver: standalone\nstorage-method: mariadb\ndata:\n  address: \"127.0.0.1:3306\"\n  database: luckperms\n  username: luckperms\n  password: \"change-me\"\nmessaging-service: auto\nYAML\n  echo \"Created default config.yml\"\nfi\necho \"Install complete. Set LUCKPERMS_DATA_* variables and start.\"\n",
+      "container": "ghcr.io/pterodactyl/installers:alpine",
+      "entrypoint": "ash"
+    }
+  },
+  "variables": [
+    {
+      "name": "Storage method",
+      "description": "LuckPerms storage-method (mariadb, mysql, postgresql, mongodb). Must match Minecraft servers.",
+      "env_variable": "LUCKPERMS_STORAGE_METHOD",
+      "default_value": "mariadb",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|in:mariadb,mysql,postgresql,mongodb,h2",
+      "field_type": "text"
+    },
+    {
+      "name": "DB address",
+      "description": "host:port of LuckPerms database (same as on game servers).",
+      "env_variable": "LUCKPERMS_DATA_ADDRESS",
+      "default_value": "127.0.0.1:3306",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:191",
+      "field_type": "text"
+    },
+    {
+      "name": "DB name",
+      "description": "Database name",
+      "env_variable": "LUCKPERMS_DATA_DATABASE",
+      "default_value": "luckperms",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:64",
+      "field_type": "text"
+    },
+    {
+      "name": "DB username",
+      "description": "Database username",
+      "env_variable": "LUCKPERMS_DATA_USERNAME",
+      "default_value": "luckperms",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:64",
+      "field_type": "text"
+    },
+    {
+      "name": "DB password",
+      "description": "Database password",
+      "env_variable": "LUCKPERMS_DATA_PASSWORD",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:191",
+      "field_type": "text"
+    },
+    {
+      "name": "REST auth enabled",
+      "description": "Require Bearer API key (true/false)",
+      "env_variable": "LUCKPERMS_REST_AUTH",
+      "default_value": "true",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|in:true,false",
+      "field_type": "text"
+    },
+    {
+      "name": "REST API keys",
+      "description": "Comma-separated API keys (Authorization: Bearer ...). Use the same value as backend LUCKPERMS_REST_API_KEY.",
+      "env_variable": "LUCKPERMS_REST_AUTH_KEYS",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:512",
+      "field_type": "text"
+    },
+    {
+      "name": "Cache users",
+      "description": "Cache GET /user (true/false)",
+      "env_variable": "LUCKPERMS_REST_CACHE_USERS",
+      "default_value": "true",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|in:true,false",
+      "field_type": "text"
+    },
+    {
+      "name": "Cache groups",
+      "description": "Cache GET /group (true/false)",
+      "env_variable": "LUCKPERMS_REST_CACHE_GROUPS",
+      "default_value": "true",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|in:true,false",
+      "field_type": "text"
+    }
+  ]
+}
