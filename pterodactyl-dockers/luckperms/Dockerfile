@@ -36,5 +36,7 @@ ENV USER=container \
 
 WORKDIR /home/container
 
+USER app
+
 # Wings ожидает entrypoint; STARTUP приходит из egg
 CMD ["/bin/bash", "/entrypoint.sh"]
