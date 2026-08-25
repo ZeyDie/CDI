@@ -3,34 +3,24 @@
 # ============================================
 FROM eclipse-temurin:21-jdk-jammy AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
-# --- LuckPerms (standalone) ---
+# LuckPerms
 RUN git clone https://github.com/LuckPerms/LuckPerms.git
-
 WORKDIR /build/LuckPerms
-
-# Собираем именно loader (финальный runnable jar)
 RUN ./gradlew :standalone:loader:shadowJar --no-daemon
-
-# Копируем с явным именем (и падаем, если файла нет)
 RUN JAR=$(find standalone/loader/build/libs -name 'LuckPerms-Standalone-*.jar' | head -1) \
- && test -n "$JAR" \
- && echo "Found standalone jar: $JAR" \
- && cp "$JAR" /build/luckperms-standalone.jar \
- && ls -lh /build/luckperms-standalone.jar
+ && test -n "$JAR" && cp "$JAR" /build/luckperms-standalone.jar
 
-# --- rest-api ---
+# rest-api
 WORKDIR /build
 RUN git clone --depth 1 https://github.com/LuckPerms/rest-api.git
 WORKDIR /build/rest-api
 RUN ./gradlew shadowJar --no-daemon
 RUN cp build/libs/luckperms-rest-api-v1.jar /build/luckperms-rest-api-v1.jar
-
 # ============================================
 # Stage 2: Runtime (Pterodactyl-friendly)
 # ============================================
