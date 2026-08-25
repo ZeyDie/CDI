@@ -1,11 +1,14 @@
 #!/bin/sh
-cd /home/container
 
-# Создаём папку extensions, если её нет
-mkdir -p data/extensions
+if [ ! -f /home/container/luckperms-standalone.jar ]; then
+    cp /opt/build/luckperms-standalone.jar /home/container/
+fi
 
-# Кладём/обновляем rest-api extension
-cp -f /home/container/luckperms-rest-api-v1.jar data/extensions/ 2>/dev/null || true
+if [ ! -f /home/container/luckperms-rest-api-v1.jar ]; then
+    cp /opt/build/luckperms-rest-api-v1.jar /home/container/
+fi
+
+exec java -jar /home/container/luckperms-standalone.jar --docker
 
 # Подстановка переменных Pterodactyl ({{VAR}} → $VAR)
 MODIFIED_STARTUP=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo "$(cat -)")
