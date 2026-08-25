@@ -10,15 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # --- LuckPerms (standalone) ---
-# Нужны теги, иначе git describe --tags в build.gradle падает
-RUN git clone --depth 1 https://github.com/LuckPerms/LuckPerms.git \
- && cd LuckPerms \
- && git fetch --tags --depth 1
+RUN git clone https://github.com/LuckPerms/LuckPerms.git
 
 WORKDIR /build/LuckPerms
 RUN ./gradlew :standalone:shadowJar --no-daemon
 
-# Ищем standalone jar
 RUN find . -name "luckperms-standalone*.jar" \
       -not -name "*-sources.jar" \
       -not -name "*-javadoc.jar" \
