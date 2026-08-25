@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-and-push-images:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       matrix: ${{ steps.find-dockerfiles.outputs.matrix }}
     steps:
@@ -47,7 +47,7 @@ jobs:
 
   build:
     needs: build-and-push-images
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix: ${{ fromJson(needs.build-and-push-images.outputs.matrix) }}
     concurrency:
