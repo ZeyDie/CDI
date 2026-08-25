@@ -1,17 +1,37 @@
 #!/bin/sh
 
-if [ ! -f /home/container/luckperms-standalone.jar ]; then
-    cp /opt/build/luckperms-standalone.jar /home/container/
-fi
+set -eu
 
-if [ ! -f /home/container/luckperms-rest-api-v1.jar ]; then
-    cp /opt/build/luckperms-rest-api-v1.jar /home/container/
-fi
+cd /home/container
 
-exec java -jar /home/container/luckperms-standalone.jar --docker
+echo "============================================"
+echo " LuckPerms Pterodactyl"
+echo "============================================"
 
-# Подстановка переменных Pterodactyl ({{VAR}} → $VAR)
-MODIFIED_STARTUP=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo "$(cat -)")
+# Pterodactyl уже смонтировал /home/container.
+# Теперь переносим JAR'ы из image layer в серверные файлы.
+
+cp -f \
+    /build-output/luckperms-standalone.jar \
+    /home/container/luckperms-standalone.jar
+
+cp -f \
+    /build-output/luckperms-rest-api-v1.jar \
+    /home/container/luckperms-rest-api-v1.jar
+
+# REST API extension
+mkdir -p /home/container/data/extensions
+
+cp -f \
+    /build-output/luckperms-rest-api-v1.jar \
+    /home/container/data/extensions/luckperms-rest-api-v1.jar
+
+echo "LuckPerms JARs installed."
+
+# {{VARIABLE}} -> ${VARIABLE}
+MODIFIED_STARTUP="$(printf '%s' "${STARTUP}" \
+    | sed 's/{{/${/g; s/}}/}/g')"
 
 echo "Starting: ${MODIFIED_STARTUP}"
-exec ${MODIFIED_STARTUP}
+
+exec sh -c "${MODIFIED_STARTUP}"
