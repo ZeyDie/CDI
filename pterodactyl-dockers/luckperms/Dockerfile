@@ -10,7 +10,7 @@ RUN apt-get update \
 WORKDIR /build
 
 # LuckPerms Standalone
-RUN git clone --depth 1 https://github.com/LuckPerms/LuckPerms.git
+RUN git clone https://github.com/LuckPerms/LuckPerms.git
 
 WORKDIR /build/LuckPerms
 
