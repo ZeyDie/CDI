@@ -24,7 +24,7 @@ RUN JAR="$(find standalone/loader/build/libs -name 'LuckPerms-Standalone-*.jar' 
 # LuckPerms REST API
 WORKDIR /build
 
-RUN git clone --depth 1 https://github.com/LuckPerms/rest-api.git
+RUN git clone https://github.com/LuckPerms/rest-api.git
 
 WORKDIR /build/rest-api
 
