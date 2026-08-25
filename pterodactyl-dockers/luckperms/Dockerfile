@@ -10,12 +10,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # --- LuckPerms (standalone) ---
-RUN git clone --depth 1 https://github.com/LuckPerms/LuckPerms.git
+# Нужны теги, иначе git describe --tags в build.gradle падает
+RUN git clone --depth 1 https://github.com/LuckPerms/LuckPerms.git \
+ && cd LuckPerms \
+ && git fetch --tags --depth 1
+
 WORKDIR /build/LuckPerms
 RUN ./gradlew :standalone:shadowJar --no-daemon
 
-# Находим готовый standalone jar
-RUN find . -name "luckperms-standalone*.jar" -not -name "*-sources.jar" -not -name "*-javadoc.jar" | head -1 | xargs -I{} cp {} /build/luckperms-standalone.jar
+# Ищем standalone jar
+RUN find . -name "luckperms-standalone*.jar" \
+      -not -name "*-sources.jar" \
+      -not -name "*-javadoc.jar" \
+    | head -1 \
+    | xargs -I{} cp {} /build/luckperms-standalone.jar
 
 # --- rest-api ---
 WORKDIR /build
@@ -34,21 +42,18 @@ LABEL author="custom" \
 
 RUN apk add --no-cache curl ca-certificates tini
 
-# Пользователь как в Pterodactyl
 RUN adduser -D -h /home/container container
 USER container
 ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
-# Копируем собранные артефакты
 COPY --from=builder --chown=container:container /build/luckperms-standalone.jar /home/container/luckperms-standalone.jar
 COPY --from=builder --chown=container:container /build/luckperms-rest-api-v1.jar /home/container/luckperms-rest-api-v1.jar
 
-# Структура данных (extensions будут здесь)
 RUN mkdir -p /home/container/data/extensions \
-    && ln -sf /home/container/luckperms-rest-api-v1.jar /home/container/data/extensions/luckperms-rest-api-v1.jar
+ && ln -sf /home/container/luckperms-rest-api-v1.jar /home/container/data/extensions/luckperms-rest-api-v1.jar
 
-# Preload зависимостей (чтобы первый запуск был быстрее)
+# Preload зависимостей
 RUN java -jar /home/container/luckperms-standalone.jar preloadDependencies || true
 
 COPY --chown=container:container entrypoint.sh /entrypoint.sh
