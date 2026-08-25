@@ -1,52 +1,68 @@
 # ============================================
-# Stage 1: Build LuckPerms standalone + rest-api
+# Stage 1: Build
 # ============================================
 FROM eclipse-temurin:21-jdk-jammy AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
-# LuckPerms
-RUN git clone https://github.com/LuckPerms/LuckPerms.git
-WORKDIR /build/LuckPerms
-RUN ./gradlew :standalone:loader:shadowJar --no-daemon
-RUN JAR=$(find standalone/loader/build/libs -name 'LuckPerms-Standalone-*.jar' | head -1) \
- && test -n "$JAR" && cp "$JAR" /build/luckperms-standalone.jar
+# LuckPerms Standalone
+RUN git clone --depth 1 https://github.com/LuckPerms/LuckPerms.git
 
-# rest-api
+WORKDIR /build/LuckPerms
+
+RUN ./gradlew :standalone:loader:shadowJar --no-daemon
+
+RUN JAR="$(find standalone/loader/build/libs -name 'LuckPerms-Standalone-*.jar' | head -1)" \
+ && test -n "$JAR" \
+ && mkdir -p /build/output \
+ && cp "$JAR" /build/output/luckperms-standalone.jar
+
+# LuckPerms REST API
 WORKDIR /build
+
 RUN git clone --depth 1 https://github.com/LuckPerms/rest-api.git
+
 WORKDIR /build/rest-api
+
 RUN ./gradlew shadowJar --no-daemon
-RUN cp build/libs/luckperms-rest-api-v1.jar /build/luckperms-rest-api-v1.jar
+
+RUN test -f build/libs/luckperms-rest-api-v1.jar \
+ && cp build/libs/luckperms-rest-api-v1.jar \
+       /build/output/luckperms-rest-api-v1.jar
+
+
 # ============================================
-# Stage 2: Runtime (Pterodactyl-friendly)
+# Stage 2: Runtime
 # ============================================
 FROM eclipse-temurin:21-jre-alpine
 
-LABEL author="custom" \
-      description="LuckPerms Standalone + REST API (built from source, Pterodactyl ready)"
-
-RUN apk add --no-cache curl ca-certificates tini
+RUN apk add --no-cache \
+    curl \
+    ca-certificates \
+    tini
 
 RUN adduser -D -h /home/container container
-USER container
-ENV USER=container HOME=/home/container
+
+ENV USER=container
+ENV HOME=/home/container
+
 WORKDIR /home/container
 
-COPY --from=builder --chown=container:container /build/luckperms-standalone.jar /home/container/luckperms-standalone.jar
-COPY --from=builder --chown=container:container /build/luckperms-rest-api-v1.jar /home/container/luckperms-rest-api-v1.jar
+# ВАЖНО:
+# Не /home/container — Pterodactyl смонтирует
+# эту директорию при запуске.
+COPY --from=builder /build/output /build-output
 
-RUN mkdir -p /home/container/data/extensions \
- && ln -sf /home/container/luckperms-rest-api-v1.jar /home/container/data/extensions/luckperms-rest-api-v1.jar
+COPY entrypoint.sh /entrypoint.sh
 
-# Preload зависимостей
-RUN java -jar /home/container/luckperms-standalone.jar preloadDependencies || true
+RUN chmod +x /entrypoint.sh \
+ && chown -R container:container /build-output /entrypoint.sh
 
-COPY --chown=container:container entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+USER container
 
 EXPOSE 8080
 
