@@ -13,13 +13,16 @@ WORKDIR /build
 RUN git clone https://github.com/LuckPerms/LuckPerms.git
 
 WORKDIR /build/LuckPerms
-RUN ./gradlew :standalone:shadowJar --no-daemon
 
-RUN find . -name "luckperms-standalone*.jar" \
-      -not -name "*-sources.jar" \
-      -not -name "*-javadoc.jar" \
-    | head -1 \
-    | xargs -I{} cp {} /build/luckperms-standalone.jar
+# Собираем именно loader (финальный runnable jar)
+RUN ./gradlew :standalone:loader:shadowJar --no-daemon
+
+# Копируем с явным именем (и падаем, если файла нет)
+RUN JAR=$(find standalone/loader/build/libs -name 'LuckPerms-Standalone-*.jar' | head -1) \
+ && test -n "$JAR" \
+ && echo "Found standalone jar: $JAR" \
+ && cp "$JAR" /build/luckperms-standalone.jar \
+ && ls -lh /build/luckperms-standalone.jar
 
 # --- rest-api ---
 WORKDIR /build
